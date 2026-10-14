@@ -247,6 +247,16 @@ Build: 6 pages (blind and camera), 18 references, no overfull boxes. Old PDFs in
 | Prose items | Fixed | Rewrites from the review. |
 | Not done | Open | Prevalence-normalised PR-AUC, block bootstrap over years, CSI/F1 and Brier skill (needs re-analysis), forecast-rain inputs (new experiment). |
 
+## Paper 2: round 3 finished (14 Oct 2026)
+
+| Item | Status | Change |
+|---|---|---|
+| Sentence started with a lower-case macro ("three did.") | Fixed | \EqMeasCap. |
+| "Blind labelling sheets for both gaps are prepared" was not true | Fixed | Only the second-annotator sheet exists and is not filled in; no kappa is reported. The claim check stays unmeasured. |
+| "the class that every guard still passed" | Fixed | "Every guard passed some replies with a misquoted fact (8 to 10% of them)", asserted. |
+| Build needs the twin backend | Fixed | `post_p2_r2.py` uses the stored per-variant labels (`p2_r2_summary.json`) when the backend is absent; all round-3 macros now generate. |
+| Abstract | Done | "catches" -> "flags"; under 250 words; 6 pages, all checks pass. |
+
 ## Paper 5: rebuilt (14 Oct 2026)
 
 | Item | Status | Change |

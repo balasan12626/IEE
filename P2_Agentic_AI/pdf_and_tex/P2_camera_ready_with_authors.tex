@@ -14,6 +14,9 @@
 \usepackage{algorithmic}
 \usepackage[hidelinks]{hyperref}
 \input{nums.tex}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
 
 \begin{document}
 
@@ -52,46 +55,46 @@ abisheksengodan18@gmail.com}
 \maketitle
 
 \begin{abstract}
-Large language models (LLMs) are proposed as the voice of emergency-management software, but they can state numbers that are not in the data. We study a flood-response pipeline in which a deterministic policy chooses every action and an LLM only narrates, behind three fail-closed checks: a health-gated policy, a disagreement gate between two classifiers and a numeric guard that replaces a message containing an unsupported number by a template. We evaluate the checks on the deployed code. A composed check of the path from policy to dispatch showed that dispatch ignored the policy whenever a health check failed at high flood probability (\EtoEViolBefore{} grid cases); a one-line fix removed every such case. Of \LiveN{} replies from two open-weight models, \LiveUnsupPct\% contained an unsupported number, \LiveEta{} of \LiveUnsup{} of them invented arrival times. The deployed guard caught \LiveDepRec\% and a slot-typed guard \LiveTypRec\%. A narrator that writes placeholders and leaves every number to the program, tested live, \SlotsAbstract{} A revised guard frozen before a third model was queried was not significantly better than the deployed guard on that model. No numeric guard sees qualitative over-claims such as ``flood confirmed'', which \OcDevPct\% of replies made, so our grounding claim covers numbers only; a frozen check on assertion words flags such claims. The gate held \GateDepHold\% of held-out cases and caught \GtDepRecall\% of the policy model's errors. All rates are specific to our prompt, models and states.
+Large language models (LLMs) are proposed as the voice of emergency-management software, but they can state numbers that the data do not contain. We measure this risk in a flood-response prototype in which deterministic rules choose every action and an LLM only turns the state into operator messages, behind a fail-closed numeric guard that replaces a reply containing an unsupported number by a fixed template. In \LiveN{} live replies of two open-weight models, \LiveUnsupPct\% contained an unsupported number, almost all of them invented arrival times; the deployed guard caught \LiveDepRec\% of these replies. We define a grounded reply and show that a narrator which writes placeholders instead of numbers is grounded by construction within a stated lexicon; tested live, it left a digit or number word in \VarSlotsViol\% of replies, which then fell back to the template. A revised guard, frozen by hash before a third model family was queried, met a different error mix on that model: \HoUnsupPct\% of its replies were unsupported, mostly invented head-counts and misquoted facts, and the revised guard was not significantly better than the deployed one there. An error taxonomy and an ablation show which rule flags which error. Qualitative over-claims such as ``flood confirmed'', partly seeded by our own prompt and template, appeared in \OcDevPct\% of replies and pass every numeric check. A composed check of the decision path frames the safety argument. All rates are specific to our prompt, models and states.
 \end{abstract}
 
 \begin{IEEEkeywords}
-large language models, hallucination, fail-safe design, runtime verification, flood response
+large language models, hallucination, data-to-text generation, fail-safe design, runtime verification, flood response
 \end{IEEEkeywords}
 
 \section{Introduction}
-During a flood, an emergency operations centre runs on short spoken messages: the river is at this level, the forecast says this, send a team there. Software that supports the centre is increasingly asked to \emph{speak}, and LLMs make this easy. They also produce confident statements that their input does not support \cite{Ji2023}. On an operations net a wrong number, or a wrong claim that a flood has started, can trigger or cancel an evacuation.
+During a flood, an emergency operations centre runs on short spoken messages: the river is at this level, send a team there. Software that supports the centre is increasingly asked to \emph{speak}, and LLMs make this easy. They also produce confident statements that their input does not support \cite{Ji2023}. On an operations net a wrong number, or a wrong claim that a flood has started, can trigger or cancel an evacuation.
 
-Agentic systems let the model plan and call tools \cite{Yao2023,Wu2024}. For a safety-critical setting we take the opposite position: decisions are made by small deterministic rules that can be checked exhaustively, and the LLM only turns their state into radio traffic. This follows the view that the level of automation should be chosen per function and per risk \cite{Parasuraman2000} and that safety is a property of the control structure rather than of one component \cite{Leveson2011}. The design is close to a classical alerting pipeline, in which a rule fills a structured message such as a Common Alerting Protocol (CAP) alert \cite{CAP2010}; what is new is a free-text narrator inside it. Two questions follow. Does the verified decision govern what the system does? And how often does the narrator misstate the state, and which design or check prevents it?
+Agentic systems let the model plan and call tools \cite{Yao2023,Wu2024}. For a safety-critical setting we take the opposite position: decisions are made by small deterministic rules that can be checked exhaustively, and the LLM only verbalises their state as operator messages. This follows the view that the level of automation should be chosen per function and per risk \cite{Parasuraman2000} and that safety is a property of the control structure rather than of one component \cite{Leveson2011}. The design is close to a classical alerting pipeline, in which a rule fills a structured message such as a Common Alerting Protocol (CAP) alert \cite{CAP2010}; what is new is a free-text narrator inside it. We ask (Q1) whether the verified decision governs actuation and (Q2) how often the narrator misstates the state, and which check or design prevents it. Q1 is the precondition of the safety argument; Q2 is our subject.
 
-We answer both on an open flood decision-support prototype for the Delhi Yamuna corridor:
+We answer both on an open flood decision-support prototype for the Delhi Yamuna corridor. The contributions are measurements on the deployed code, not a new detector:
 \begin{enumerate}
-\item A composed check of the path from policy to dispatch, with its equivalence classes, which found that dispatch bypassed the policy and confirmed the fix.
-\item A measurement of numeric grounding on \LiveN{} live replies of two open-weight LLMs and on injected errors, comparing the deployed guard, a slot-typed guard, an LLM judge and two prompt designs, including one in which the LLM writes no number at all.
-\item A held-out test of a revised guard on a third model family, frozen by hash before its replies were read, with paired tests, and a frozen check for qualitative over-claims.
-\item A held-out study of the disagreement gate that reports the share of errors it catches and its cost against a calibrated single model.
+\item A definition of a grounded reply and a proposition that a placeholder-only (``slots-only'') narrator is grounded by construction, with its scope, tested live against the production prompt.
+\item A measurement of numeric grounding on \LiveN{} live replies of two open-weight LLMs, with an error taxonomy over all \TaxN{} stored replies, state-clustered intervals and a comparison of the deployed guard, a typed guard and an LLM judge.
+\item A held-out test of a revised guard on a third model family, frozen by hash before its replies were read, with a component ablation, and the template-fallback rate as the monitoring signal.
+\item Evidence that part of the over-claiming came from our own prompt and template, which no numeric check can see.
 \end{enumerate}
-A companion paper on the whole decision chain reuses the dispatch result and the guard results on the development replies; this paper reports the full guard study, the prompt designs and the gate.
+A companion paper on the whole decision chain reuses the dispatch result and the development-set guard results; this paper reports the full narration study.
 
 \section{Related Work}
-\textit{LLM agents} interleave reasoning with actions \cite{Yao2023} and cooperate in conversations \cite{Wu2024}; surveys describe them as memory, planner and action interface around a model \cite{WangL2024}.
+\textit{Agents and guardrails.} LLM agents are surveyed in \cite{WangL2024}. Generated text departs from its source in many ways \cite{Ji2023}. Retrieval grounds generation in documents \cite{Lewis2020}; post-hoc checkers decompose text into atomic claims \cite{Min2023}, sample the model several times \cite{Manakul2023}, let the model verify itself \cite{Dhuliawala2024} or ask another model to judge \cite{Zheng2023}. NeMo Guardrails programs dialogue rails and checks facts with a further model call \cite{Rebedea2023}, the setting of our LLM-judge baseline; runtime verification checks outputs against expert specifications \cite{Zhang2025}, and runtime enforcement blocks unsafe agent actions \cite{WangH2026}.
 
-\textit{Hallucination detection and guardrails.} Generated text departs from its source in many ways \cite{Ji2023}. Retrieval grounds generation in documents \cite{Lewis2020}; post-hoc checkers decompose text into atomic claims \cite{Min2023}, sample the model several times \cite{Manakul2023}, let the model verify itself \cite{Dhuliawala2024} or ask another model to judge \cite{Zheng2023}. NeMo Guardrails programs dialogue rails and checks facts with a further model call \cite{Rebedea2023}, which is the setting of our LLM-judge baseline; runtime verification checks outputs against expert specifications \cite{Zhang2025}, and runtime enforcement blocks unsafe agent actions \cite{WangH2026}. Our facts are a handful of numbers in a known state, so a deterministic, typed check is possible, and so is a design in which the model writes no numbers.
+\textit{Data-to-text faithfulness.} Our narrator is a data-to-text generator. Neural data-to-text systems were shown early to state numbers and facts absent from their input records \cite{Wiseman2017}; a gold-standard error annotation separates number, name, word and context errors \cite{Thomson2020}, and open LLMs still produce such errors on structured data \cite{Kasner2024}. Delexicalisation, in which the generator writes slot tokens that a program later fills, has long been used in dialogue generation to keep values exact \cite{Wen2015}; our slots-only narrator is that idea applied to an LLM, as a safety device rather than a data-sparsity device.
 
-\textit{Safe automation.} Shields block unsafe actions of learned controllers \cite{Alshiekh2018}, and ensembles estimate uncertainty \cite{Lakshminarayanan2017}. We use disagreement between two classifiers as a hold signal.
+\textit{Safe automation.} Shields block unsafe actions of learned controllers \cite{Alshiekh2018}, and ensembles estimate uncertainty \cite{Lakshminarayanan2017}.
 
-\textit{Research gap.} We found no study that measures, on an emergency system's deployed code, whether a verified decision governs actuation and how often live LLM narration misstates numeric state, comparing deterministic checks, a model judge and a numbers-free narrator.
+\textit{Position.} The checks themselves are simple. What we add is an empirical measurement inside a deployed safety pipeline: a guard frozen by hash and tested on a model family it never saw, the fallback rate as the signal that a guard has started to fail, a formal scope for the placeholder design, and the finding that the system's own prompt and fallback template produced over-claims.
 
 \section{Architecture}
 \label{sec:arch}
-Fig.~\ref{fig:arch} shows the system. A FastAPI backend runs one pipeline per tick, in live mode (Open-Meteo weather and river data) or in simulation mode (a digital twin of the corridor). The code calls its eleven components agents (weather, dam, flood risk, traffic, shelter, evacuation, rescue, ambulance, disaster team, administrator and a monitor of sudden changes). Ten of them inform, rank, propose or narrate; only the policy (\ref{eq:policy}) decides, and dispatch executes only what it allowed. The system is therefore a rule-based pipeline with an LLM narrator, and we use the code's names only to identify components. Every event goes to a MongoDB log and a WebSocket stream. Algorithm~\ref{alg:tick} gives one tick; narration runs last, after the decision is logged, so a narration failure can delay a radio message but cannot change a decision.
+Fig.~\ref{fig:arch} shows the system. A FastAPI backend runs one pipeline per tick, in live mode (Open-Meteo weather and river data) or in simulation mode (a digital twin of the corridor). Of its eleven components, which the code calls agents, only the policy (\ref{eq:policy}) decides, and dispatch executes only what it allowed. Every event goes to a MongoDB log. Algorithm~\ref{alg:tick} gives one tick; narration runs last, after the decision is logged, so a narration failure can delay a message but cannot change a decision.
 
 \begin{algorithm}[t]
 \caption{One pipeline tick (after the fix)}
 \label{alg:tick}
 \begin{algorithmic}[1]
 \small
-\STATE read observations; weather and dam components emit updates
+\STATE read observations and the operator override flag $o$
 \STATE $p_{\mathrm{RF}},p_{\mathrm{XGB}},p \leftarrow$ classifiers; $H\leftarrow$ (\ref{eq:dual})
 \STATE $(h_d,h_m,h_s)\leftarrow$ health checks; $a\leftarrow\pi(p,\mathbf{h},o)$ by (\ref{eq:policy})
 \STATE \textbf{if} $H$ \AND \NOT $o$ \textbf{then} $a\leftarrow\textsc{review}$ and log the hold reason
@@ -116,7 +119,7 @@ Fig.~\ref{fig:arch} shows the system. A FastAPI backend runs one pipeline per ti
 \node[gate, below=0.5cm of dual] (pol) {Gated policy\\$\pi$ (\ref{eq:policy})};
 \node[box, left=0.35cm of pol] (ops) {Traffic, shelter,\\evacuation};
 \node[box, left=0.35cm of ops] (res) {Rescue, ambulance,\\disaster team};
-\node[llm, below=0.5cm of res] (llm) {LLM narrator\\(no actuation)};
+\node[llm, below=0.55cm of res] (llm) {LLM narrator\\(no actuation)};
 \node[gate, right=0.35cm of llm] (guard) {Numeric guard\\$\Gamma$ (\ref{eq:guard})};
 \node[box, right=0.35cm of guard] (hum) {Officer +\\event log};
 \draw[arr] (wx) -- (fr);
@@ -124,17 +127,17 @@ Fig.~\ref{fig:arch} shows the system. A FastAPI backend runs one pipeline per ti
 \draw[arr] (dual) -- (pol);
 \draw[arr] (pol) -- (ops);
 \draw[arr] (ops) -- (res);
-\draw[arr] (res) -- node[left, font=\tiny]{state} (llm);
+\draw[arr] (res) -- node[left]{state} (llm);
 \draw[arr] (llm) -- (guard);
-\draw[arr] (guard) -- node[above, font=\tiny]{accept} (hum);
-\draw[arr, dashed] (guard.south) -- ++(0,-0.25) -| node[pos=0.25, below, font=\tiny]{reject $\rightarrow$ template} (llm.south);
+\draw[arr] (guard) -- node[above]{accept} (hum);
+\draw[arr, dashed] (guard.south) -- ++(0,-0.3) -| node[pos=0.25, below]{reject $\rightarrow$ template} (llm.south);
 \draw[arr, dotted] (pol.east) -- ++(0.3,0) |- (hum.east);
 \end{tikzpicture}
 \caption{Pipeline. Shaded blocks can only hold, downgrade or reject; none can trigger an action. The LLM (dashed) receives the shared state and has no actuation rights. The dotted link carries every policy decision and its reason to the officer.}
 \label{fig:arch}
 \end{figure}
 
-\subsection{Decision Policy}
+\subsection{Decision Policy and Disagreement Gate}
 The flood-risk component receives a flood probability $p$ and three health flags: $h_d$ (weather and river data available), $h_m$ (model loaded and returned a value) and $h_s$ (database connected). An operator can set an override $o$, and a flag $A$ enables automation. With $\tau_m=0.50$ and $\tau_a=0.60$, served from one configuration module,
 \begin{equation}
 \pi(p,\mathbf{h},o)=
@@ -147,9 +150,7 @@ The flood-risk component receives a flood probability $p$ and three health flags
 \end{cases}
 \label{eq:policy}
 \end{equation}
-
-\subsection{Classifiers and the Disagreement Gate}
-Two classifiers score the same inputs: a Random Forest \cite{Breiman2001} and an XGBoost model \cite{Chen2016}, the latter supplying $p$. Both were trained on the INDOFLOODS catalogue (\ClsEvents{} flood events at \ClsGauges{} gauges) to predict whether an event is \emph{severe}; the label is the catalogue's flood type, and \ClsPos\% of events are severe. Their \ClsNum{} numeric and \ClsCat{} categorical inputs are rainfall over the last 1 to 10 days with engineered ratios, the season, catchment attributes and a gauge prior. A stratified random 80/20 split of events gave a held-out ROC-AUC of \ClsAucRf{} (RF) and \ClsAucXgb{} (XGBoost) and an accuracy at $\tau_a$ of \ClsAccRf\% and \ClsAccXgb\%. The ``flood probability'' that the system displays is therefore the probability that a flood event at the corridor's gauge would be severe. Automatic dispatch is held when
+A Random Forest \cite{Breiman2001} and an XGBoost model \cite{Chen2016}, the latter supplying $p$, were trained on the INDOFLOODS catalogue (\ClsEvents{} events at \ClsGauges{} gauges) to predict whether an event is severe (held-out ROC-AUC \ClsAucRf{} and \ClsAucXgb). Automatic dispatch is held when
 \begin{multline}
 H=\big[\,|p_{\mathrm{RF}}-p_{\mathrm{XGB}}|\ge\delta\,\big]\\
 \vee\ \big[\min(p_{\mathrm{RF}},p_{\mathrm{XGB}})<\tau_a\le\max(p_{\mathrm{RF}},p_{\mathrm{XGB}})\big],
@@ -158,73 +159,124 @@ H=\big[\,|p_{\mathrm{RF}}-p_{\mathrm{XGB}}|\ge\delta\,\big]\\
 with $\delta=0.15$; the second, \emph{straddle} term flags models on opposite sides of the threshold.
 
 \subsection{LLM Narration and the Numeric Guards}
-Agent conversations are generated by an LLM through an external API. The band follows $p$ (calm below 0.40, watch below 0.50, administrator review below 0.60, automated response above) and sets who speaks and the tone; the action is still set by $\pi$. The prompt lists the current facts (probabilities, rainfall, river level, barrage stage, time and place), states the band's rule and tells the model to use only those numbers. The rule of the automated band reads ``Above 60\%: flood occurred'', and the template that replaces a rejected reply begins ``Flood has occurred''; Section~\ref{sec:claims} returns to this wording.
+\label{sec:guards}
+The band follows $p$ (calm below 0.40, watch below 0.50, administrator review below 0.60, automated response above) and sets who speaks and the tone; the action is still set by $\pi$. The prompt lists the current facts (probabilities, rainfall, river level, barrage stage, time and place), states the band's rule and tells the model to use only those numbers. The rule of the automated band reads ``Above 60\%: flood occurred'', and the template that replaces a rejected reply begins ``Flood has occurred''; Sec.~\ref{sec:claims} returns to this wording.
 
 Let $\mathcal{N}(s)$ be the decimal numbers in a string $s$ and $F$ the prompt text up to the recent-history block. With $\tilde F=\{f,100f,f/100: f\in\mathcal{N}(F)\}$, the deployed guard accepts turns $T$ when
 \begin{equation}
 \Gamma(T)=\bigwedge_{t\in T}\ \bigwedge_{n\in\mathcal{N}(t)}\ \exists f\in\tilde F:\ |n-f|\le \tfrac12 10^{-d(n)},
 \label{eq:guard}
 \end{equation}
-where $d(n)$ is the number of decimals written in $n$, so honest rounding passes. The guard is untyped: a number written as a word is invisible to it, and a value drawn uniformly from an integer range $[a,b]$ passes with probability
+where $d(n)$ is the number of decimals written in $n$, so honest rounding passes. The guard is untyped: a number written as a word is invisible to it, and an integer drawn uniformly from $[a,b]$ passes with probability
 \begin{equation}
-P_{\mathrm{miss}}\approx |\{\lfloor f\rceil : f\in\tilde F\}\cap[a,b]|\,/\,(b-a+1).
+P_{\mathrm{miss}}= |\{\lfloor f\rceil : f\in\tilde F\}\cap[a,b]|\,/\,(b-a+1),
 \label{eq:miss}
 \end{equation}
+where $\lfloor f\rceil$ is the integer nearest to $f$ (the only integers within the tolerance of (\ref{eq:guard}) for $d(n)=0$).
 
-\textit{Slot-typed guard.} $\Gamma_{\mathrm{T}}$ reads facts from the structured state and binds each number to a quantity before checking it: number words become digits, clock times must equal the current time, a number with ``\%'' must match a model probability or a threshold of the band, one with ``mm'' the rainfall and one with ``m'' a water level. An unbound number is rejected. A revised version, $\Gamma_{\mathrm{T}}^{(2)}$, adds procedural numbers (reporting intervals, deadlines given as orders), rejects every arrival time and binds a value without a unit to the quantity named just before it.
+\textit{Typed guards.} $\Gamma_{\mathrm{T}}$ reads facts from the structured state and binds each number to a quantity before checking it: number words become digits, clock times must equal the current time, a number with ``\%'' must match a model probability or a threshold of the band, one with ``mm'' the rainfall and one with ``m'' a water level. An unbound number is rejected. A revised version, $\Gamma_{\mathrm{T}}^{(2)}$, adds a list of procedural numbers (reporting intervals, deadlines given as orders), rejects every arrival time and binds a value without a unit to the quantity named just before it.
 
-\textit{Slots-only narrator.} As an alternative to checking numbers, the prompt can forbid them: the model writes no digit or number word and refers to facts by placeholders (\{probability\}, \{rain\_mm\}, \{river\_m\}, \{barrage\_m\}, \{time\}, \{threshold\}, \{places\}), which the program fills from the state. A reply that still contains a digit, a number word or an unknown placeholder is replaced by the template.
+\textit{Slots-only narrator.} Instead of checking numbers, the prompt can forbid them: the model writes no digit or number word and refers to facts by placeholders (\{probability\}, \{rain\_mm\}, \{river\_m\}, \{barrage\_m\}, \{time\}, \{threshold\}, \{places\}), which the program fills from the state. A reply whose raw text contains a digit, a word from a fixed number-word lexicon $\mathcal{W}$ or an unknown placeholder is replaced by the template.
+
+\begin{definition}[Grounded reply]
+Let the state $\sigma$ assign a value $v_q$ to each quantity $q$ it holds. A \emph{numeric mention} is a number $n$ in the reply, in digits or words, together with the quantity $q$ it describes. A reply is \emph{grounded} in $\sigma$ if every mention is procedural, quotes a threshold of the current band, or has $q$ in $\sigma$ and $|n-v_q|\le\frac12 10^{-d(n)}$. It is \emph{value-grounded} if every number it contains equals some state value or threshold, whatever quantity it is attached to.
+\end{definition}
+
+\begin{proposition}[Slots-only render]
+If the raw text of a slots-only reply contains no digit, no word of $\mathcal{W}$ and no unknown placeholder, and no place name contains a digit, then the rendered reply is value-grounded. It is grounded if, in addition, the model wrote each placeholder where its quantity is meant.
+\end{proposition}
+\begin{IEEEproof}
+Every digit of the rendered text was inserted by the renderer, which writes only state values and band thresholds into known placeholders; the raw text contributes none, and no number word from $\mathcal{W}$.
+\end{IEEEproof}
+The guarantee has two stated gaps: number words outside $\mathcal{W}$ (``eleven'', ``a dozen'') and a placeholder put where another quantity is meant. Neither is a guard failure in the sense of (\ref{eq:guard}); both are checked empirically in Sec.~\ref{sec:design}.
 
 \section{Evaluation Setup}
-\textit{Policy and dispatch path.} We evaluated (\ref{eq:policy}) on $p\in\{0,0.001,\dots,1\}$ plus an undefined value, all eight health combinations and both override states ($1{,}002\times8\times2=$ \PolCases{} cases), against five properties (\textsc{auto} only if every check passes and $p\ge\tau_a$; undefined $p$ gives \textsc{unavailable}; $p<\tau_m$ without override gives \textsc{monitor}; $p\ge\tau_a$ with a failed check gives \textsc{review}; monotone in $p$ when healthy). We then extracted the dispatch decision into a pure function and checked the composed path (policy, hold, dispatch) over every defined probability, health combination, hold and override ($1{,}001\times8\times2\times2=$ \EtoECases{} cases) for the property that teams are dispatched only when every check passes and the models agree, or an operator overrides. Because $p$ enters both functions only through comparisons with 0.40, 0.50 and 0.60, all of which lie on the grid, the grid contains every equivalence class, so each check is a proof for the extracted functions, not a sample.
+\textit{Decision path.} We evaluated (\ref{eq:policy}) on $p\in\{0,0.001,\dots,1\}$ plus an undefined value, all eight health combinations and both override states (\PolCases{} cases), against five properties (\textsc{auto} only if every check passes and $p\ge\tau_a$; undefined $p$ gives \textsc{unavailable}; $p<\tau_m$ without override gives \textsc{monitor}; $p\ge\tau_a$ with a failed check gives \textsc{review}; monotone in $p$ when healthy). We then extracted the dispatch decision into a pure function and checked the composed path (policy, hold, dispatch) for the property that teams are dispatched only when every check passes and the models agree, or an operator overrides, over \EtoECases{} cases.
 
-\textit{Live replies.} For \LiveStates{} seeded states (rainfall 5--250~mm in a monsoon month, both model probabilities from the deployed classifiers, river 200.0--208.5~m, barrage 199.0--206.0~m) we sent the production prompt to gpt-oss-20b and gpt-oss-120b on Groq at temperature 0.85 without fallback (\LiveN{} replies, all parsed), and stored the verdict of each check. Reference labels follow a written protocol. A number is \emph{supported} if it states a state value for the quantity it describes (honest rounding allowed) or quotes a band threshold; \emph{procedural} numbers (reporting intervals, unit labels, the count of named places, band ranges, deadlines given as orders) are ignored; anything else, including any arrival time, is \emph{unsupported}. The protocol was applied by a script; replies on which it disagreed with any checker were then read, and \LiveOverrides{} labels were changed, all to ``procedural''. Because this reading saw the checkers' verdicts, we also report every result under the script's labels alone.
+\begin{lemma}[Grid coverage]
+Assume (i) the extracted policy and dispatch functions read $p$ only through the comparisons $p<0.40$, $p<0.50$ and $p\ge0.60$; (ii) these thresholds are grid points and the code compares against the same binary floating-point constants that the grid produces ($k/1000$ in IEEE 754 double precision); (iii) $H$ enters the dispatch function as a free boolean, enumerated in both values for every $p$; (iv) health flags and override are booleans. Then the grid check of a property over $\{0,0.001,\dots,1\}$ decides it for every $p\in[0,1]$.
+\end{lemma}
+\begin{IEEEproof}
+By (i), the outputs are constant on each of $[0,0.40)$, $[0.40,0.50)$, $[0.50,0.60)$ and $[0.60,1]$; by (ii), each interval contains grid points and its end points fall in the right interval; by (iii) and (iv), every other input is enumerated.
+\end{IEEEproof}
+The lemma covers the extracted functions. Because $H$ is a free input, the check holds for any hold the gate might output; it does not verify that (\ref{eq:dual}) computes $H$ correctly, and it says nothing about the asynchronous pipeline around the functions.
 
-\textit{Prompt designs.} For the first \VarStates{} of these states and the same models we ran two further prompts on one day (the run was stopped there to limit API use): the production prompt plus one line forbidding arrival times, and the slots-only prompt (\VarN{} calls each), plus the unchanged production prompt on the first 50 states (\VarBaseN{} calls) to check for drift. These replies were labelled by the script only.
+\textit{Live replies.} For \LiveStates{} seeded states (rainfall 5--250~mm in a monsoon month, both model probabilities from the deployed classifiers, river 200.0--208.5~m, barrage 199.0--206.0~m) we sent the production prompt through the Groq API to \texttt{openai/gpt-oss-20b} and \texttt{openai/gpt-oss-120b} on 10 Oct.\ 2026 (\LiveN{} replies, all parsed), without fallback, and stored every verdict. The temperature was 0.85 because that is the value the deployed narrator uses; we did not tune it. Reference labels follow a written protocol. A number is \emph{supported} if it states a state value for the quantity it describes (honest rounding allowed) or quotes a band threshold; \emph{procedural} numbers (reporting intervals, the count of named places, band ranges, deadlines given as orders) are ignored; anything else, including any arrival time, is \emph{unsupported}. A script applies the protocol; replies on which it disagreed with any checker were then read by one author, and \LiveOverrides{} labels were changed, all to ``procedural''. That reading saw the checkers' verdicts, so we also report results under the script's labels alone. Intervals resample states (2,000 replicates), since both models answer the same states.
 
-\textit{LLM judge.} Qwen3 (27B), a family different from the generators, received the structured facts and the turns at temperature 0 and returned whether every number was supported \cite{Zheng2023}. It saw 320 injected replies (40 states) and the \LiveN{} live replies. \JudFailN{} live calls failed after retries; the deployed system would send these to the template, but we report the judge both with them counted as rejections and without them.
+\textit{Prompt designs.} For the first \VarStates{} states and the same models we ran on 13 Oct.\ 2026 the production prompt plus one line forbidding arrival times, and the slots-only prompt (\VarN{} calls each), plus the unchanged production prompt on the first 50 states (\VarBaseN{} calls) to check for drift. These replies were labelled by the script only.
 
-\textit{Held-out model family.} $\Gamma_{\mathrm{T}}^{(2)}$ was written from the misses on the development replies, frozen and hashed (SHA-256) before replies from ALLaM-2 (7B) were collected for the same \HoStates{} states. \HoN{} replies parsed; the other \HoParseFail{} calls, all in the automated band (\AllamFailAuto{} of \AllamAutoCalls{} calls there, none of \AllamOtherCalls{} elsewhere), failed or returned invalid JSON, so the held-out set under-represents that band. The script labelled the replies; reading changed \HoOverrides{} labels, again all to ``procedural''.
+\textit{LLM judge.} Qwen3 27B (API identifier \texttt{qwen/qwen3.8-27b}), a family different from the generators, received the structured facts and the turns at temperature 0 and returned whether every number was supported \cite{Zheng2023}, for 320 injected replies (40 states) and the \LiveN{} live replies (10--11 Oct.\ 2026). \JudFailN{} live calls failed after retries; the deployed system would send these to the template.
 
-\textit{Claim check.} A short pattern check rejects sentences that assert an observed flood (``flood confirmed'', ``has breached'', ``water ingress'') unless a hedge (``could'', ``chance of'', ``expected'') precedes them. It was written on the development replies and frozen by hash before any reply of the prompt-design run was read.
+\textit{Held-out model family.} $\Gamma_{\mathrm{T}}^{(2)}$ was written from the misses on the development replies, frozen and hashed (SHA-256) before replies of \texttt{allam-2-7b} were collected for the same \HoStates{} states on 10 Oct.\ 2026. \HoN{} replies parsed; the other \HoParseFail{} calls, all in the automated band, failed or returned invalid JSON. Reading changed \HoOverrides{} labels, again all to ``procedural''.
 
-\textit{Gate.} The prototype's rainfall sweep varies 24-h rainfall (0--300~mm) and month for one synthetic gauge with default attributes; \SweepAboveP\% of its settings exceed the 99th percentile of 1-day rainfall in the training events (\ClsTOneP~mm), so the sweep extrapolates. We therefore also rebuilt the classifiers' split and used its \CalTest{} held-out events. A held event goes to an officer; we count the policy model's errors that the gate holds, false dispatches (released, $p\ge\tau_a$, not severe) and missed dispatches (released, $p<\tau_a$, severe), with 2,000-event bootstrap intervals.
+\textit{Claim check.} A short pattern check rejects sentences that assert an observed flood (``flood confirmed'', ``has breached'', ``water ingress'') unless a hedge (``could'', ``chance of'', ``expected'') precedes them. It was written on the development replies and frozen by hash before any reply of the prompt-design run was read. Its accuracy has not been measured.
 
 \section{Results}
-\subsection{Policy and the Path to Dispatch}
+\subsection{The Decision Path}
 \label{sec:audit}
-The policy satisfied all five properties in every case. The composed check found a fault: the original dispatch step tested the probability band and the hold but never read the action returned by $\pi$, so when a health check failed while both models agreed on a high probability, $\pi$ returned \textsc{review} and teams were still dispatched; the hold also applied only in simulation mode. The \EtoEViolBefore{} violating grid cases are exactly the \EtoEHigh{} probabilities at or above $\tau_a$ times the 7 health combinations with a failure, without hold or override, i.e.\ one equivalence class. The count is a grid count, not an exposure estimate: the fault fires whenever a health check fails while $p\ge\tau_a$ and the gate releases. In the prototype's sweep, \SweepAutoRel{} of \SweepN{} settings were in that state, so a data or database outage at any of them would have dispatched; we have no record of how often health checks fail in operation. After the fix (dispatch requires \textsc{auto} or \textsc{override}, and the hold applies in both modes) the check found \EtoEViolAfter{} violations, and three regression tests now guard the rule. The finding is an integration error that an end-to-end test would also catch; the point is the method, a property check on the composed path. Behaviour that the pure-function check cannot cover remains: health flags that go stale between check and dispatch, an override that races a tick, and task cancellation. The last one did occur in this code base: a cancelled run loop wrote its final status over the next run, which stopped after about two ticks, and was found only by running the system.
+The policy satisfied all five properties in every case. The composed check found that the original dispatch step tested the probability band and the hold but never read the action returned by $\pi$: when a health check failed while both models agreed on a high probability, $\pi$ returned \textsc{review} and teams were still dispatched (\EtoEViolBefore{} grid cases, one equivalence class). In the prototype's own rainfall sweep, \SweepAutoRel{} of \SweepN{} settings were in that state. After the fix (dispatch requires \textsc{auto} or \textsc{override}, and the hold applies in both modes) the check found \EtoEViolAfter{} violations. An end-to-end test would also have caught this integration error; we report it to show that a property check on the composed path finds it systematically, and because the rest of the paper relies on it: once only $\pi$ can actuate, a wrong narration can mislead an officer but cannot dispatch a team.
 
 \subsection{Numeric Grounding of Live Replies}
-\LiveUnsup{} of the \LiveN{} replies (\LiveUnsupPct\%; \LiveTwentyUnsupPct\% for gpt-oss-20b and \LiveOneTwentyUnsupPct\% for gpt-oss-120b) stated at least one unsupported number, and \LiveEta{} of these \LiveUnsup{} (\LiveEtaPct\%) were invented arrival times such as ``ETA 10 minutes''; the prompt contains no ETA. Probabilities, rainfall, water levels and times were almost always quoted correctly. Table~\ref{tab:live} compares the checks.
+\LiveUnsup{} of the \LiveN{} replies (\LiveUnsupPct\%, 95\% interval \LiveUnsupCi\%) stated at least one unsupported number, and \LiveEta{} of these \LiveUnsup{} were invented arrival times such as ``ETA 10 minutes''; the prompt contains no ETA. Table~\ref{tab:live} compares the checks.
 
 \begin{table}[t]
-\caption{Checks on \LiveN{} live replies of gpt-oss (reference labels)}
+\caption{Checks on the \LiveN{} live gpt-oss replies (reference labels)}
 \label{tab:live}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.4pt}
 \begin{tabular}{lcccc}
 \toprule
-Check & Recall (95\% CI) & FR & Prec. & Calls\\
+Check & $n$ & Recall & False rej. & Calls\\
 \midrule
-Deployed $\Gamma$ & 89.0 (82--94) & 5.8 & 89.8 & 0\\
-Typed $\Gamma_{\mathrm{T}}$ & 93.6 (87--97) & 10.5 & 83.6 & 0\\
-LLM judge & 99.1 (95--100) & 14.1 & 80.0 & 1\\
-LLM judge$^\ast$ &99.0 (95--100) & 6.8 & 89.3 & 1\\
+Deployed $\Gamma$ & 300 & 89.0 (83--95) & 5.8 (3--9) & 0\\
+Typed $\Gamma_{\mathrm{T}}$ & 300 & 93.6 (89--98) & 10.5 (6--15) & 0\\
+LLM judge, failures rejected & 300 & 99.1 (97--100) & 14.1 (9--19) & 1\\
+LLM judge, answered only & 277 & 99.0 (97--100) & 6.8 (3--11) & 1\\
 \bottomrule
-\multicolumn{5}{l}{\scriptsize In \%. Recall over the \LiveUnsup{} unsupported replies; FR: rejections of the}\\
-\multicolumn{5}{l}{\scriptsize \LiveSup{} supported ones. $^\ast$\JudFailN{} failed calls excluded (\JudAnsN{} replies).}\\
+\multicolumn{5}{l}{\scriptsize In \%, 95\% state-clustered bootstrap intervals in brackets. Recall over}\\
+\multicolumn{5}{l}{\scriptsize unsupported replies, false rejections over supported ones. ``Answered}\\
+\multicolumn{5}{l}{\scriptsize only'' drops the \JudFailN{} judge calls that failed. Calls: model calls per check.}\\
 \end{tabular}
 \end{table}
 
-The deployed guard missed \LiveDepMiss{} unsupported replies, mostly arrival times in words (``ETA about ten minutes'') or equal to the current clock time. The typed guard caught more but rejected \LiveTypFpN{} supported replies, mostly for procedural numbers or values without a unit (``barrage 202.26''); in paired tests it added false rejections significantly (McNemar $p=\McDevTypFpP$) but not recall ($p=\McDevTypRecP$). Counting its \JudFailN{} failed calls as rejections, the LLM judge rejected \LiveJJudFpr\% of supported replies; \JudFailSup{} of those calls were on supported replies. On the \JudAnsN{} replies it answered, it missed \JudAnsMiss{} unsupported reply (recall \JudAnsRec\%) and rejected \JudAnsFpr\% of supported ones, fewer than the typed guard (\JudAnsTypFpr\%) on the same replies. The judge recognises an invented ETA in any wording, but it costs one model call per message, failed on \JudFailN{} of \LiveN{} calls, and is itself a model whose verdicts cannot be checked exhaustively.
+The typed guard caught more than the deployed guard but rejected \LiveTypFpN{} supported replies, mostly for procedural numbers or values without a unit (``barrage 202.26''). Its extra false rejections are clear (difference \TypDepFprDiffCi{} points); its extra recall is weaker evidence, since the exact paired test gives $p=\McDevTypRecP$ while the clustered interval of the difference is \TypDepRecDiffCi{} points. The LLM judge recognises an invented ETA in any wording, but it costs one model call per message, failed on \JudFailN{} of \LiveN{} calls, and is itself a model whose verdicts cannot be checked exhaustively. Under the script's labels alone (\PoDevUnsup{} unsupported replies instead of \LiveUnsup), the guards' recall was \PoDevDepRec\%, \PoDevTypRec\% and \PoDevVtwoRec\%.
 
-Removing the $\times100$ and $/100$ copies from $\tilde F$ left recall unchanged on the development replies (\NsDevRec\%) and raised false rejections from \LiveDepFpr\% to \NsDevFpr\%; on the held-out model, recall rose from \HoDepRec\% to \NsHoRec\% and false rejections from \HoDepFpr\% to \NsHoFpr\%. Under the script's labels alone (\PoDevUnsup{} unsupported development replies instead of \LiveUnsup), the guards' recall was \PoDevDepRec\%, \PoDevTypRec\% and \PoDevVtwoRec\%, close to Table~\ref{tab:live}.
+\subsection{What the Errors Are}
+Table~\ref{tab:tax} classifies every unsupported reply that we stored. Categories are assigned by keyword rules on the context of each number the labelling script flagged (for example, a number followed by ``people'' or ``affected'' is a head-count); nobody read the replies to assign them. The two development models erred almost only with arrival times, the held-out model with head-counts, durations and misquoted facts.
+
+\begin{table}[t]
+\caption{Error taxonomy over all \TaxN{} stored replies}
+\label{tab:tax}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.2pt}
+\begin{tabular}{lccccrccc}
+\toprule
+ & \multicolumn{4}{c}{Replies with error (\%)} & & \multicolumn{3}{c}{Passed (\%)}\\
+Category & 20b & 120b & ALLaM & Var. & $n$ & $\Gamma$ & $\Gamma_{\mathrm{T}}$ & $\Gamma_{\mathrm{T}}^{(2)}$\\
+\midrule
+ETA & 32.0 & 38.7 & 4.5 & 4.9 & 140 & 14 & 8 & 3\\
+Head-count & 0.0 & 0.0 & 25.0 & 0.0 & 33 & 0 & 0 & 0\\
+Duration & 2.7 & 1.3 & 9.8 & 0.0 & 19 & 11 & 0 & 0\\
+Coordinate & 0.0 & 0.0 & 0.8 & 0.0 & 1 & 0 & 0 & 0\\
+Label or level & 0.7 & 0.0 & 5.3 & 0.0 & 8 & 0 & 0 & 0\\
+Misquoted fact & 2.7 & 0.0 & 37.9 & 1.9 & 65 & 8 & 8 & 10\\
+Number word & 0.0 & 0.7 & 3.0 & 0.4 & 7 & 57 & 0 & 0\\
+Other & 0.0 & 0.0 & 1.5 & 0.0 & 2 & 0 & 0 & 0\\
+\bottomrule
+\multicolumn{9}{l}{\scriptsize 20b, 120b: \LiveStates{} replies each; ALLaM: \HoN; Var.: the \TaxVarN{} prompt-design replies.}\\
+\multicolumn{9}{l}{\scriptsize $n$: replies with the error. Passed: share of them a guard accepted;}\\
+\multicolumn{9}{l}{\scriptsize $\Gamma_{\mathrm{T}}^{(2)}$ only on the \TaxNotDev{} replies not used to design it. A reply can fall}\\
+\multicolumn{9}{l}{\scriptsize in several rows. No rate of rise was flagged.}\\
+\end{tabular}
+\end{table}
+
+The deployed guard passed \TaxEtaPassDep\% of replies with an invented ETA and \TaxWordPassDep\% of those with a number word. Eq.~(\ref{eq:miss}) explains only part of this. The \EqDigitN{} development replies whose only error was an ETA in digits used \EqA--\EqB{} minutes; over that range, (\ref{eq:miss}) gives a miss probability of \EqPmissMean\% on average (at most \EqPmissMax\%) for the facts of each state, so \EqExpUni{} of these replies should pass by collision (\EqExpEmp{} with the observed distribution of values, which favours 10 and 15). \EqMeasCap{} did. Of the \LiveDepMiss{} development replies the deployed guard missed, the other \MissRestN{} lie outside (\ref{eq:miss}): \MissWordsN{} wrote the ETA in words, \MissClockN{} as a clock time and \MissOtherN{} contained another error. Every guard passed some replies with a misquoted fact (\TaxFactPassDep--\TaxFactPassVtwo\% of them); a value close to a fact for another quantity passes an untyped check, and the typed guards bind by nearby words, which a long sentence can mislead.
 
 \subsection{Prompt Designs}
 \label{sec:design}
-Table~\ref{tab:design} gives the two alternative prompts. \DesignText{}
+Table~\ref{tab:design} gives the alternative prompts. Re-run on the same day, the production prompt still produced an unsupported number in \VarBaseUnsup\% of replies (\VarBaseCi\%). One added line forbidding arrival times lowered this to \VarNoetaUnsup\% (\VarNoetaCi\%) at a cost of \VarNoetaTokDiff{} tokens per call. The slots-only prompt left a digit or number word in \VarSlotsViol\% of replies, which fell back to the template.
 
 \begin{table}[t]
 \caption{Prompt designs, live, first \VarStates{} states (script labels)}
@@ -240,106 +292,85 @@ production prompt$^\ast$ & 100 & 28.0 & 26.0 & 26.0 & 8.0 & 634 & 64\\
 + no arrival times & 233 & 3.4 & 0.4 & 2.6 & 17.6 & 664 & 67\\
 slots only & 234 & 1.7 & 0.4 & 2.1 & 5.1 & 734 & 57\\
 \bottomrule
-\multicolumn{8}{l}{\scriptsize In \% except calls, tokens (prompt + output per call) and words per reply.}\\
-\multicolumn{8}{l}{\scriptsize Templ.: replaced by the template (failed call, or rejected by $\Gamma$; for}\\
-\multicolumn{8}{l}{\scriptsize slots, a digit or number word left in the text). $^\ast$First 50 states only.}\\
+\multicolumn{8}{l}{\scriptsize Unsup., ETA, Templ., Claim in \% of replies. Templ.: replaced by the template}\\
+\multicolumn{8}{l}{\scriptsize (failed call or rejected by $\Gamma$; for slots, rejected by the slot check). Claim:}\\
+\multicolumn{8}{l}{\scriptsize flagged by the claim check (accuracy not measured). Tokens: prompt + output}\\
+\multicolumn{8}{l}{\scriptsize per call; words per reply. $^\ast$First 50 states only.}\\
 \end{tabular}
 \end{table}
+
+\VarSlotsResidWCap{} of the \SlotsPassed{} replies that passed the slot check was still flagged by the labelling script. Read against the Proposition, it is not a counterexample. The flagged number is the river level, a state value; the model wrote ``\{rain\_mm\} mm rainfall, \{river\_m\} metres river level'', which renders a doubled unit, and the script binds a number to rainfall when ``rain'' occurs just before it. The same reply wrote ``Estimated time \{time\}'', so the current time is presented as an arrival time: value-grounded, but with a placeholder where another quantity is meant, the second gap of the Proposition. A scan of the passed replies found no number word outside $\mathcal{W}$. Whether placeholder replies read as well on a radio net is a question for officers.
 
 \subsection{Injected Errors}
-Table~\ref{tab:guard} compares the checks on injected errors: one grounded reply and seven copies with one wrong value per state, passed through the production code with the HTTP client stubbed. The deployed guard rejected \GAllDeployed\% of wrong digit strings with no false rejections and none of the wrong values written in words; the typed guard rejected \GAllTyped\% and \GWordsTyped\% of number words. The \GMissN{} deployed misses were collisions: \GMissFact{} with a genuine fact for another quantity (with a probability of \MissExProb\%, an invented ``ETA \MissExEta{} minutes'' passed), \GMissRule{} with a band threshold and \GMissScale{} with a $\times100$ copy. The judge was the weakest check on small probability errors, which change a single digit.
-
-\begin{table}[t]
-\caption{Detection rate (\%) by injected error type}
-\label{tab:guard}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{2.6pt}
-\begin{tabular}{lccc|ccc}
-\toprule
- & \multicolumn{3}{c|}{\GuardCtx{} states ($n=\GuardCtx$ per row)} & \multicolumn{3}{c}{\JudgeInjStates{} states ($n=\JudgeInjStates$)}\\
-Injected error & $\Gamma$ & facts only & $\Gamma_{\mathrm{T}}$ & $\Gamma$ & $\Gamma_{\mathrm{T}}$ & judge\\
-\midrule
-Grounded (false rej.) & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0\\
-\midrule
-Probability $\pm$1--5 & 94.0 & 95.0 & 97.0 & 97.5 & 100.0 & 85.0\\
-Probability $\pm$10--30 & 95.5 & 96.5 & 97.0 & 92.5 & 95.0 & 97.5\\
-Rainfall 0.5--1.5$\times$ & 97.0 & 97.5 & 100.0 & 95.0 & 100.0 & 100.0\\
-River $\pm$0.5--2 m & 98.0 & 98.0 & 98.5 & 100.0 & 100.0 & 100.0\\
-Invented head-count & 97.5 & 98.0 & 100.0 & 100.0 & 100.0 & 100.0\\
-Invented ETA & 94.0 & 95.0 & 100.0 & 95.0 & 100.0 & 100.0\\
-Wrong value in words & 0.0 & 0.0 & 81.5 & 0.0 & 92.5 & 90.0\\
-\midrule
-All numeric errors & 96.0 & 96.7 & 98.8 & 96.7 & 99.2 & 97.1\\
-\bottomrule
-\multicolumn{7}{l}{\scriptsize facts only: $\Gamma$ without band-rule numbers. Grounded row: false rejections. The}\\
-\multicolumn{7}{l}{\scriptsize 95\% Wilson intervals of the judge column are at most $\pm$\JudgeCiMax{} points.}\\
-\end{tabular}
-\end{table}
+On \GuardCtx{} states, each with one grounded reply and seven copies holding one wrong value, passed through the production code with the HTTP client stubbed, the deployed guard rejected \GAllDeployed\% of wrong digit strings, none of the grounded replies and none of the wrong values written in words. Its \GMissN{} misses were collisions: \GMissFact{} with a genuine fact for another quantity, \GMissRule{} with a band threshold and \GMissScale{} with a $\times100$ copy. The typed guard rejected \GAllTyped\% of wrong digit strings and \GWordsTyped\% of wrong number words. On a subset of \JudgeInjStates{} states the LLM judge was the weakest check on small probability errors, which change a single digit (it missed \JudgeProbSmallMiss\%).
 
 \subsection{A Held-Out Model Family}
 \label{sec:heldout}
-Table~\ref{tab:heldout} separates the development replies, on which $\Gamma_{\mathrm{T}}^{(2)}$ was built and is perfect by construction, from the frozen test on ALLaM-2. \HoUnsup{} of its \HoN{} replies (\HoUnsupPct\%) contained an unsupported number, and most were not arrival times but invented quantities: head-counts, rates of rise, durations, coordinates and casualty estimates (\ErrAllamQty\% of all its replies, \HoCountPct\% of its unsupported ones). The shift is sharp: arrival times appeared in \ErrOssEtaMin--\ErrOssEtaMax\% of gpt-oss replies but \ErrAllamEta\% of ALLaM-2 replies, which also misquoted a probability in \ErrAllamProb\%, an error the development models never made.
+Table~\ref{tab:heldout} separates the development replies, on which $\Gamma_{\mathrm{T}}^{(2)}$ was built and is perfect by construction, from the frozen test on ALLaM-2. \HoUnsup{} of its \HoN{} replies (\HoUnsupPct\%) were unsupported, with the error mix of Table~\ref{tab:tax}. The frozen guard caught \HoVtwoRec\% against \HoDepRec\% for the deployed guard, a difference of \HoDiffW{} replies (McNemar $p=\McVtwoRecP$; clustered interval \HoVtwoDepRecDiffCi{} points), and rejected \HoVtwoFp{} correct replies against \HoDepFp, all of them procedural labels such as ``Team 1'' that the development models never wrote. On this set neither guard is shown to be better. Under the script's labels, which count those labels as unsupported, neither guard falsely rejected any held-out reply, which shows how much false-rejection rates depend on the procedural judgement.
 
 \begin{table}[t]
 \caption{Guards on development replies and on a held-out model family}
 \label{tab:heldout}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{2.6pt}
+\setlength{\tabcolsep}{2.2pt}
 \begin{tabular}{lcccc}
 \toprule
- & \multicolumn{2}{c}{gpt-oss, \LiveN{} (dev.)} & \multicolumn{2}{c}{ALLaM-2, \HoN{} (held out)}\\
-Check & Recall & FR & Recall (95\% CI) & FR\\
+ & \multicolumn{2}{c}{gpt-oss, $n=\LiveN$} & \multicolumn{2}{c}{ALLaM-2, $n=\HoN$ (held out)}\\
+Check & Recall & False rej. & Recall & False rej.\\
 \midrule
-Deployed $\Gamma$ & 89.0 & 5.8 & 96.1 (89--99) & 7.1\\
-Typed $\Gamma_{\mathrm{T}}$ & 93.6 & 10.5 & 100.0 (95--100) & 17.9\\
-Typed v2 (frozen) & 100.0 & 0.0 & 98.7 (93--100) & 12.5\\
+Deployed $\Gamma$ & 89.0 & 5.8 & 96.1 (91--100) & 7.1 (2--15)\\
+Typed $\Gamma_{\mathrm{T}}$ & 93.6 & 10.5 & 100.0 (100--100) & 17.9 (8--29)\\
+Typed $\Gamma_{\mathrm{T}}^{(2)}$ (frozen) & 100.0 & 0.0 & 98.7 (96--100) & 12.5 (4--23)\\
 \bottomrule
-\multicolumn{5}{l}{\scriptsize In \%. $\Gamma_{\mathrm{T}}^{(2)}$ was frozen by hash before any ALLaM-2 reply was read.}\\
+\multicolumn{5}{l}{\scriptsize In \%, 95\% bootstrap intervals over states. $\Gamma_{\mathrm{T}}^{(2)}$ was frozen by hash}\\
+\multicolumn{5}{l}{\scriptsize before any ALLaM-2 reply was read.}\\
 \end{tabular}
 \end{table}
 
-On ALLaM-2 the frozen guard caught \HoVtwoRec\% against \HoDepRec\% for the deployed guard, a difference of two replies: it alone caught \McVtwoRecOnly{} and the deployed guard alone \McDepRecOnly{} (McNemar $p=\McVtwoRecP$). It also rejected \HoVtwoFp{} correct replies against \HoDepFp{} (\HoVtwoFpr\% against \HoDepFpr\%; $p=\McVtwoFpP$), all of them procedural labels such as ``Team 1'' or ``level 2 alert'' that the development models never wrote. On this held-out set, therefore, neither guard is shown to be better. Under the script's labels alone, which count those labels as unsupported, neither guard falsely rejected any held-out reply, which shows how much the false-rejection rates depend on the procedural judgement. For example, ``Team 1 (Rescue) will head to'' is correct but was rejected, while ``begun flooding with 134 affected'' invents a head-count. Deployed, a guard's rejections become template fallbacks: \FbTwenty\% of gpt-oss-20b calls, \FbOneTwenty\% of gpt-oss-120b and \FbAllam\% of ALLaM-2 calls ended in the template. Checking one reply with $\Gamma_{\mathrm{T}}^{(2)}$ took \VtwoUs~$\mu$s on a laptop.
+Table~\ref{tab:ablation} removes one component of $\Gamma_{\mathrm{T}}^{(2)}$ at a time. The ETA ban carries most of the recall on the development models and on the prompt-design replies (\AbVarUnsup{} unsupported of \TaxVarN, also unseen when the guard was frozen); the clock rule matters only on the held-out model; the procedural list prevents false rejections and catches nothing; unit binding changed no verdict on any set. On the prompt-design replies the frozen guard caught \AbFullVarRec\%, below its development score.
+
+\begin{table}[t]
+\caption{Ablation of $\Gamma_{\mathrm{T}}^{(2)}$: recall / false rejections (\%)}
+\label{tab:ablation}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{gpt-oss (dev.)} & \multicolumn{2}{c}{ALLaM-2} & \multicolumn{2}{c}{Prompt designs}\\
+Guard & Rec. & FR & Rec. & FR & Rec. & FR\\
+\midrule
+complete $\Gamma_{\mathrm{T}}^{(2)}$ & 100.0 & 0.0 & 98.7 & 12.5 & 85.0 & 0.0\\
+\midrule
+-- number words & 99.1 & 0.0 & 97.4 & 12.5 & 80.0 & 0.0\\
+-- clock rule & 100.0 & 0.0 & 92.1 & 12.5 & 85.0 & 0.0\\
+-- unit binding & 100.0 & 0.0 & 98.7 & 12.5 & 85.0 & 0.0\\
+-- ETA ban & 85.3 & 0.0 & 98.7 & 12.5 & 65.0 & 0.0\\
+-- procedural list & 100.0 & 18.8 & 100.0 & 16.1 & 85.0 & 4.9\\
+\bottomrule
+\multicolumn{7}{l}{\scriptsize ``--'': component switched off. Labels: reference (dev., ALLaM-2), script (designs).}\\
+\end{tabular}
+\end{table}
+
+In deployment a guard's rejections become template fallbacks: \FbTwenty\% of gpt-oss-20b calls, \FbOneTwenty\% of gpt-oss-120b and \FbAllam\% of ALLaM-2 calls ended in the template.
 
 \subsection{Qualitative Over-Claims}
 \label{sec:claims}
-\OcDev{} development replies (\OcDevPct\%), all in the automated band, asserted that a flood ``is confirmed'' or that water ``has breached'', although the state holds only a probability; such a claim can trigger or cancel an evacuation as readily as a wrong number. No numeric check is designed to see them: the deployed guard passed \OcDevPassDep{} of the \OcDev{} (\OcDevPassDepPct\%), and the others rejected some only because the same reply also contained a bad number (judge: \OcDevPassJud{} passed). The wording comes partly from our own prompt, whose automated-band rule says ``flood occurred'', and the deployed template says ``Flood has occurred''; the fallback itself over-claims. \ClaimText{} Our grounding claim is therefore limited to numbers; over-claims need a rule on assertion words and, more simply, a prompt and template that speak of probability.
+\OcDev{} development replies (\OcDevPct\%), all in the automated band, asserted that a flood ``is confirmed'' or that water ``has breached'', although the state holds only a probability. No numeric check is designed to see them: the deployed guard passed \OcDevPassDep{} of the \OcDev, and the judge \OcDevPassJud. The wording comes partly from our own prompt, whose automated-band rule says ``flood occurred'', and the deployed template says ``Flood has occurred'', so the fallback itself over-claims. The frozen claim check flagged \VarBaseClaim\%, \VarNoetaClaim\% and \VarSlotsClaim\% of the replies to the three prompts of Table~\ref{tab:design}, which it had never seen; how many of these flags are correct, and how many over-claims it misses, has not been measured. Our grounding claim is therefore limited to numbers.
 
-\subsection{Dual-Model Gate}
-On the prototype's sweep (\DualN{} settings) the gate held \DualHold\% of settings, including \DualBothHeld\% of those where both models exceeded $\tau_a$, so automatic dispatch was almost unreachable there. On the \CalTest{} held-out events (Table~\ref{tab:gate2}) the XGBoost model was over-confident (ECE \EceXgb, against \EceRf{} for the Random Forest; above $\tau_a$ it predicted \XgbHighConf{} where severe events occurred at \XgbHighFreq), so the two models differ systematically. The deployed gate held \GateDepHold\% of events and caught \GtDepCaught{} of the policy model's \GtErrN{} errors (\GtDepRecall\%). The straddle rule held fewer events (\GtStHolds{} against \GtDepHolds) with a higher error rate among them (\GateStErrHeld\% against \GateDepErrHeld\%), but that is precision: it caught only \GtStCaught{} errors (\GtStRecall\%), so replacing the gap term with it would let \GtMore{} more errors reach action (95\% interval \GtMoreLo--\GtMoreHi). A tolerance learned on training data alone, $\delta_{95}=\DeltaCv$ (the sweep stops holding cases on which both models agree at $\delta=\DeltaZeroBoth$), behaved like the straddle rule. Under assumed costs, with a review costing 0.2 of a false dispatch and the officer assumed always right, the deployed gate had the lowest cost when a missed dispatch costs as much as a false one (\GtCostDepOne{} against \GtCostNoneOne{} per 100 events without a gate). When a missed dispatch costs five times as much, a single isotonic-calibrated model without any gate, its threshold ($t^\ast=\GtCalT$) set on training folds, was cheapest (\GtCostCalFive{} against \GtCostDepFive). Disagreement thus carries information, but whether a gate pays depends on costs that only an operations room can set.
-
-\begin{table}[t]
-\caption{Gate rules on \CalTest{} held-out events (policy model: XGBoost)}
-\label{tab:gate2}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{1.9pt}
-\begin{tabular}{lcccccc}
-\toprule
- & Held & Errors caught & False & Missed & \multicolumn{2}{c}{Cost / 100}\\
-Rule & \% & \% (95\% CI) & disp. & disp. & 1:1 & 1:5\\
-\midrule
-no gate & 0.0 & 0 & 93 & 133 & 24.8 & 83.3\\
-$\delta=0.15$ (deployed) & 26.9 & 40.3 (34--47) & 38 & 97 & 20.2 & 62.9\\
-$\delta_{95}$ (train CV) & 9.1 & 17.7 (13--23) & 60 & 126 & 22.3 & 77.6\\
-straddle only & 7.6 & 15.9 (11--21) & 62 & 128 & 22.4 & 78.7\\
-calibrated, $t^{\ast}$ (no gate) & 0.0 & 0 & 320 & 27 & 38.1 & 50.0\\
-\bottomrule
-\multicolumn{7}{l}{\scriptsize Of \GtErrN{} policy-model errors. Cost: false dispatch 1, missed dispatch 1 or 5,}\\
-\multicolumn{7}{l}{\scriptsize review 0.2 (assumed; held events assumed decided correctly).}\\
-\end{tabular}
-\end{table}
+\subsection{The Disagreement Gate}
+On the \CalTest{} held-out events of the classifiers' split, the deployed gate held \GateDepHold\% of events and caught \GtDepCaught{} of the policy model's \GtErrN{} errors (\GtDepRecall\%); the straddle term alone caught \GtStRecall\%. We compared the gate with a single isotonic-calibrated XGBoost model without a gate, whose threshold is set on training folds for each cost ratio. With a false dispatch costing 1, a review 0.2 and the officer assumed always right, the gate was cheaper than no gate at every ratio from 1 to 10, and cheaper than the calibrated model while a missed dispatch costs less than \BeR{} false dispatches (95\% interval \BeLo--\BeHi). The gate catches errors, but its net benefit depends on cost ratios that must be set operationally.
 
 \section{Discussion and Limitations}
-The results locate the weak points in the glue between components. A dispatch step bypassed a verified policy, a gate tolerance was never related to the calibration of the models it compares, an untyped guard treated every number as interchangeable, and the template meant to absorb failures carried its own over-claim. None of these showed up when components were tested one at a time. Which errors appear depends on the model: the development models added arrival times, the held-out model added head-counts and misquoted facts. A check designed around one model's habits has to be tested again on the next one, and a fail-closed fallback hides what it absorbs: while we prepared this study, retired API models and a token budget too small for reasoning models silently sent every reply to the template, which only the fallback rate revealed.
+All four faults we found lay at interfaces between components. A dispatch step bypassed a verified policy, a gate tolerance was never related to the calibration of the models it compares, an untyped guard treated every number as interchangeable, and the template meant to absorb failures carried its own over-claim. A guard tuned on one model's errors met a different mix on the next. A fail-closed fallback masks the failures it absorbs unless its rate is monitored: while we prepared this study, retired API models and a token budget too small for reasoning models silently sent every reply to the template, which only the fallback rate revealed.
 
-The limits are clear. All quantitative rates come from one prompt family, \LiveStates{} states, temperature 0.85 and three open-weight models from two families; no frontier or other common open model was tested, and the rates will change with all of these. Reference labels were assigned by one annotator, who saw the checkers' verdicts while reading disagreements; results under the script's labels are reported, and an independent second annotation is the main open item. River and barrage values were sampled from operating ranges, not recorded events. The policy and dispatch checks prove properties of extracted functions, not of the asynchronous pipeline. The classifiers predict severity from a random split of events, and the gate costs are assumptions. No officer has used the system in an exercise.
+All rates come from one prompt family, \LiveStates{} states, temperature 0.85 and three open-weight models from two families; no frontier model was tested. Reference labels were assigned by one author, who saw the checkers' verdicts when reading disagreements; replies on which all checks agreed were not read, and the claim check has no measured precision or recall. A blind labelling sheet for a second annotator is prepared but not yet filled in, so no agreement score is reported. The error categories come from keyword rules, not from reading. River and barrage values were sampled from operating ranges, not recorded events. The decision-path lemma covers extracted functions, not the asynchronous pipeline. The gate's costs are assumptions, and no officer has used the system in an exercise.
 
-For a deployment we draw four rules. Prefer a narrator that does not write numbers, or failing that forbid the quantities the state lacks. Speak of probabilities in prompts and templates, and check assertion words as well as numbers. Measure the template-fallback rate per model, the only sign of a guard that has started to reject correct traffic. And re-run a labelled held-out test whenever the model behind the API changes.
+For a deployment we draw four rules. Prefer a narrator that does not write numbers, or failing that forbid the quantities the state lacks. Speak of probabilities in prompts and templates, and check assertion words as well as numbers. Monitor the template-fallback rate per model. And re-run a labelled held-out test whenever the model behind the API changes.
 
 \section{Conclusion}
-In a flood-response pipeline where deterministic rules decide and an LLM narrates, a composed check found that dispatch bypassed the verified policy, a fault a component test could not reveal. In \LiveN{} live replies of two open-weight LLMs, \LiveUnsupPct\% stated an unsupported number, \LiveEtaPct\% of them arrival times; the deployed guard caught \LiveDepRec\% and a typed guard \LiveTypRec\%, at the cost of more false rejections. \ConclusionDesign{} A revised guard frozen before a third model was queried was not significantly better than the deployed one on that model, and qualitative over-claims, partly seeded by our own prompt and template, escape every numeric check. The disagreement gate caught \GtDepRecall\% of the classifier's errors, and whether it is worth its holds depends on costs set by the operations room. LLM narration can serve an operations net only if it stays outside the decision path and is checked against the state it describes, in its numbers and in its claims.
+In a flood-response pipeline where deterministic rules decide and an LLM narrates, \LiveUnsupPct\% of live replies of two open-weight models stated an unsupported number, nearly all invented arrival times; the deployed guard caught \LiveDepRec\% of them, and its misses on digit arrival times are close to the number that (\ref{eq:miss}) predicts. A narrator that writes only placeholders is grounded by construction within a stated lexicon, and its one flagged reply in \SlotsPassed{} fits the Proposition's second gap. A revised guard frozen before a third model family was queried met different errors there and was not significantly better. Qualitative over-claims, partly seeded by our own prompt and template, escape every numeric check. Our results support LLM narration only outside the decision path, with both numeric and claim checks against the state.
 
 \section*{Acknowledgment}
 The authors thank the INDOFLOODS dataset authors and Open-Meteo for openly available data.
@@ -358,10 +389,14 @@ In line with the IEEE policy on AI-generated content, the authors disclose that 
 \bibitem{Min2023} S. Min \textit{et al.}, ``FActScore: Fine-grained atomic evaluation of factual precision in long form text generation,'' in \textit{Proc. Conf. Empir. Methods Nat. Lang. Process. (EMNLP)}, 2023, pp. 12076--12100, doi: 10.18653/v1/2023.emnlp-main.741.
 \bibitem{Manakul2023} P. Manakul, A. Liusie, and M. J. F. Gales, ``SelfCheckGPT: Zero-resource black-box hallucination detection for generative large language models,'' in \textit{Proc. Conf. Empir. Methods Nat. Lang. Process. (EMNLP)}, 2023, pp. 9004--9017, doi: 10.18653/v1/2023.emnlp-main.557.
 \bibitem{Dhuliawala2024} S. Dhuliawala \textit{et al.}, ``Chain-of-verification reduces hallucination in large language models,'' in \textit{Findings Assoc. Comput. Linguist. (ACL)}, 2024, pp. 3563--3578, doi: 10.18653/v1/2024.findings-acl.212.
-\bibitem{Zheng2023} L. Zheng \textit{et al.}, ``Judging LLM-as-a-judge with MT-Bench and Chatbot Arena,'' in \textit{Adv. Neural Inf. Process. Syst. 36 (Datasets Benchmarks Track)}, 2023.
+\bibitem{Zheng2023} L. Zheng \textit{et al.}, ``Judging LLM-as-a-judge with MT-Bench and Chatbot Arena,'' in \textit{Adv. Neural Inf. Process. Syst. 36}, 2023, pp. 46595--46623, doi: 10.52202/075280-2020.
 \bibitem{Rebedea2023} T. Rebedea, R. Dinu, M. N. Sreedhar, C. Parisien, and J. Cohen, ``NeMo Guardrails: A toolkit for controllable and safe LLM applications with programmable rails,'' in \textit{Proc. Conf. Empir. Methods Nat. Lang. Process.: Syst. Demonstrations}, 2023, pp. 431--445, doi: 10.18653/v1/2023.emnlp-demo.40.
 \bibitem{Zhang2025} Y. Zhang, S. Y. Emma, A. L. J. En, and J. S. Dong, ``RvLLM: LLM runtime verification with domain knowledge,'' in \textit{Adv. Neural Inf. Process. Syst. 38}, 2025, pp. 89374--89394, doi: 10.52202/085713-2693.
 \bibitem{WangH2026} H. Wang, C. M. Poskitt, and J. Sun, ``AgentSpec: Customizable runtime enforcement for safe and reliable LLM agents,'' in \textit{Proc. IEEE/ACM 48th Int. Conf. Softw. Eng. (ICSE)}, 2026, pp. 2938--2950, doi: 10.1145/3744916.3764546.
+\bibitem{Wiseman2017} S. Wiseman, S. Shieber, and A. Rush, ``Challenges in data-to-document generation,'' in \textit{Proc. Conf. Empir. Methods Nat. Lang. Process. (EMNLP)}, 2017, pp. 2253--2263, doi: 10.18653/v1/D17-1239.
+\bibitem{Thomson2020} C. Thomson and E. Reiter, ``A gold standard methodology for evaluating accuracy in data-to-text systems,'' in \textit{Proc. 13th Int. Conf. Nat. Lang. Gener. (INLG)}, 2020, pp. 158--168, doi: 10.18653/v1/2020.inlg-1.22.
+\bibitem{Kasner2024} Z. Kasner and O. Du\v{s}ek, ``Beyond traditional benchmarks: Analyzing behaviors of open LLMs on data-to-text generation,'' in \textit{Proc. 62nd Annu. Meeting Assoc. Comput. Linguist. (ACL)}, 2024, pp. 12045--12072, doi: 10.18653/v1/2024.acl-long.651.
+\bibitem{Wen2015} T.-H. Wen, M. Ga\v{s}i\'{c}, N. Mrk\v{s}i\'{c}, P.-H. Su, D. Vandyke, and S. Young, ``Semantically conditioned LSTM-based natural language generation for spoken dialogue systems,'' in \textit{Proc. Conf. Empir. Methods Nat. Lang. Process. (EMNLP)}, 2015, pp. 1711--1721, doi: 10.18653/v1/D15-1199.
 \bibitem{Alshiekh2018} M. Alshiekh, R. Bloem, R. Ehlers, B. K\"{o}nighofer, S. Niekum, and U. Topcu, ``Safe reinforcement learning via shielding,'' in \textit{Proc. AAAI Conf. Artif. Intell.}, vol. 32, no. 1, 2018, pp. 2669--2678, doi: 10.1609/aaai.v32i1.11797.
 \bibitem{Lakshminarayanan2017} B. Lakshminarayanan, A. Pritzel, and C. Blundell, ``Simple and scalable predictive uncertainty estimation using deep ensembles,'' in \textit{Adv. Neural Inf. Process. Syst. 30}, 2017, pp. 6402--6413.
 \bibitem{Breiman2001} L. Breiman, ``Random forests,'' \textit{Mach. Learn.}, vol. 45, no. 1, pp. 5--32, 2001, doi: 10.1023/A:1010933404324.

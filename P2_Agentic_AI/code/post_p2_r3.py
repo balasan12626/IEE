@@ -94,6 +94,10 @@ def extend(put, work, out):
     assert sh["Misquoted fact"]["allam"] > 10 * max(sh["Misquoted fact"]["gpt-oss-20b"], sh["Misquoted fact"]["gpt-oss-120b"])
     assert T["passed"]["Misquoted fact"]["v2_ok"] >= T["passed"]["Misquoted fact"]["deployed_ok"], \
         "text: misquoted facts are the class every guard still passes"
+    mf = T["passed"]["Misquoted fact"]
+    assert all(mf[k] is not None and mf[k] > 0 for k in ("deployed_ok", "typed_ok", "v2_ok")) and \
+        mf["deployed_ok"] == min(mf[k] for k in ("deployed_ok", "typed_ok", "v2_ok")) and \
+        mf["v2_ok"] == max(mf[k] for k in ("deployed_ok", "typed_ok", "v2_ok")), "text: every guard passed some (range dep..v2)"
     assert all(T["passed"][c]["v2_ok"] in (0.0, None) for c in ("Head-count", "Duration", "Coordinate", "Label or level",
                                                                "Number word")), "text: typed v2 passed none of these"
     assert T["passed"]["Number word"]["deployed_ok"] > 50, "text: the deployed guard passes most number-word errors"
