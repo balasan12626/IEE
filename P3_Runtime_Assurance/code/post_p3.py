@@ -302,13 +302,14 @@ put("ViolBlindEight", f"{cl[0]['blind']:.1f}")
 put("ViolOnehotEight", f"{cl[0]['onehot']:.1f}")
 put("ViolOnehotSixteen", f"{cl[1]['onehot']:.1f}")
 put("ViolText", (
-    f"On the twin,{M['ViolBlindQ']}\\% of the unsafe QAOA samples and {M['ViolBlindSA']}\\% of the annealing samples "
+    f"On the twin, {M['ViolBlindQ']}\\% of the unsafe QAOA samples and {M['ViolBlindSA']}\\% of the annealing samples "
     f"overfilled a shelter although every pair of groups in it fitted, so the QUBO assigned them no penalty at all. "
     f"Overloads with a penalized pair almost never reached the top, and the XY mixer never broke the one-hot rule. At "
-    f"city scale the picture changes: the annealer, run for a fixed 40 sweeps, left groups with no shelter or with several "
+    f"city scale the annealer, run for a fixed 40 sweeps, left groups with no shelter or with several "
     f"in {M['ViolOnehotEight']}\\% of unsafe samples at {Gs[0]} groups, {M['ViolOnehotSixteen']}\\% at {Gs[1]} and all of "
-    f"them at {Gs[-1]}, while penalty-free overloads fell from {M['ViolBlindEight']}\\% to none. A small instance fails "
-    f"through the encoding and a large one through the search, and the verifier catches both. " +
+    f"them at {Gs[-1]}, while penalty-free overloads fell from {M['ViolBlindEight']}\\% to none. On the twin the "
+    f"failures are encoding misses; at city scale they are mostly broken one-hot rows, which longer annealing did not "
+    f"repair (Section~\\ref{{sec:base}}). The verifier catches both. " +
     ("The twin re-run that produced these classes reproduced the original flags in every draw; the city classes come "
      "from the same run as the city tables."
      if CITY2 else
@@ -413,13 +414,14 @@ put("WorstCity", worst.capitalize())
 put("WorstFalse", f"{cc[worst]['false']:.1f}")
 put("WorstGreedy", f"{cc[worst]['greedy']:.1f}")
 put("MinUnsafeCity", f"{min(v['unsafe'] for v in cc.values()):.1f}")
+put("MaxUnsafeCity", f"{max(v['unsafe'] for v in cc.values()):.1f}")
 assert cc[worst]["greedy"] == min(cc[c]["greedy"] for c in cc if c != "kolkata"), "text: worst city = weakest greedy"
 put("ByCityText", (
-    f"Unverified dispatch was unsafe in at least "
-    f"{M['MinUnsafeCity']}\\% of calls in every city. In Kolkata the three closures cut one of the six zones off from "
+    f"Unverified dispatch was unsafe in {M['MinUnsafeCity']} to {M['MaxUnsafeCity']}\\% of calls, depending on the "
+    f"city. In Kolkata the three closures cut one of the six zones off from "
     f"every shelter, so any instance with a group there has no valid plan, and only {M['KolFeas']} of 60 were solvable. "
-    f"{M['WorstCity']} had the most false escalations ({M['WorstFalse']}\\%) and the weakest greedy rule, which found a "
-    f"plan in {M['WorstGreedy']}\\% of its solvable instances. The failures of the uncertified loop therefore depend on "
+    f"Among the other five cities, {M['WorstCity']} had the most false escalations ({M['WorstFalse']}\\%) and the "
+    f"weakest greedy rule, which found a plan in {M['WorstGreedy']}\\% of its solvable instances. The failures of the uncertified loop therefore depend on "
     f"the city network as well as on the problem size."))
 
 # ---------------- second revision: usual-practice baselines, exact solver first, longer annealer

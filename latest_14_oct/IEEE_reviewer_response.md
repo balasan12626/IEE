@@ -139,6 +139,26 @@ New experiment `exp_p1_r5.py` (runs without the twin backend, about 7 minutes) o
 
 To stay at 6 pages: the per-city table (old Table IV) and the best-of-N gap table (old Table III) were folded into the text (all their claims and tests remain), contribution 4 merged into contribution 1, and the Discussion and Conclusion were shortened. Build: blind and camera 6 pages, no overfull boxes, 28 references in order, blind copy anonymous.
 
+## Paper 3: round 3 (14 Oct 2026, internal review, no new experiments)
+
+An internal reviewer (scored 2.9 / 5) found the problems below. All numbers come from stored results (`p3_city2.json`, `p3_v2.json`, `p3_r2.json`) through `post_p3.py` / `post_p3_r2.py`, which assert each new claim.
+
+| Comment | Status | Change |
+|---|---|---|
+| Banned word "showcase"; run-ups, rhetorical questions, closers | ✅ | Rewritten by hand. |
+| Abstract about 300 words | ✅ | 242 words; "faster in median time". |
+| Text vs Table VI (Chennai vs Kolkata) | ✅ | "Among the other five cities, Chennai..."; unsafe range 12.7 to 100.0% instead of "at least 12.7%". |
+| "A weak search is part of the story" contradicted by data | ✅ | Now "More search did not help": 400 sweeps better on 1 instance, worse on 5 (asserted); the limit is the encoding and penalty weight. |
+| Two values for twin MILP / QAOA times | ✅ | The second set is labelled "a separate timing run". |
+| City plan quality of the verified loop missing | ✅ | 2,570 calls on solvable instances: optimal 37.0%, median gap 4.4%, P90 28.7%; plans from greedy 1,516, sampler 940, MILP 114. |
+| Penalty-free overload looks like an artifact of the encoding | ✅ | Section III-A states that exact encodings exist (slack variables, minimal-set penalty) and why the pairwise form is kept. |
+| "Certificate" too strong | ✅ | Holds within the solver's feasibility tolerance and default MIP gap. |
+| Single 5 s deadline looks post hoc | ✅ | Deadline curve: 1/2/5/10/30 s stop 45/22/7/2/1 instances, all with valid plans (asserted). |
+| Stale table footnote, missing space "twin,97.7%" | ✅ | Fixed. |
+| Self-citation of the P1 overlap; enumeration cross-check of infeasibility | ❌ | Not done (double-blind; enumeration cross-check not in the stored data). |
+
+Build: 6 pages (blind and camera), 21 references, no overfull boxes, blind copy anonymous. Old PDFs in `_before_P3_revision3_2026-10-14/`.
+
 ---
 
 ## Our own score estimate (not a real review)

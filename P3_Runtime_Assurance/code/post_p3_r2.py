@@ -100,7 +100,7 @@ def extend(put, work, out, T, C, city2=None):
     put("ExSlowFound", str(slow_found))
     put("ExSlowN", str(len(slow)))
     put("ExactFirstText", (
-        f"Is the sampler worth calling first? On the twin the MILP took a median {milp_tw:.1f}~ms per event, one "
+        f"We next compare sampler-first and solver-first loops. In a separate timing run on the twin the MILP took a median {milp_tw:.1f}~ms per event, one "
         f"annealing call of 64 chains {sa_tw:.0f}~ms and one QAOA training {qtrain:.1f}~s of simulation. At city scale "
         f"one annealing call took a median {city_sa[8] / 1000:.2f}, {city_sa[16] / 1000:.2f} and {city_sa[32] / 1000:.2f}~s "
         f"at 8, 16 and 32 groups, against {city_milp[8] / 1000:.2f}, {city_milp[16] / 1000:.2f} and "
@@ -127,14 +127,49 @@ def extend(put, work, out, T, C, city2=None):
         wv = {G: pct([c["sampler_found"] for v in r2["city"] if v["G"] == G and feas_c[(v["city"], v["G"], v["tight"], v["k"])]
                       and v["k"] < 3 for c in v["sa"]]) for G in (8, 16, 32)}
         st = {G: float(np.median([v["sa_ms"] for v in sk.values() if v["G"] == G])) / 1000 for G in (8, 16, 32)}
+        # paired per instance: share of calls with a valid sample, 400 vs 40 sweeps
+        weak_by = {(v["city"], v["G"], v["tight"], v["k"]): v for v in r2["city"]}
+        better = worse = 0
+        for k, v in sk.items():
+            if not feas_c[k]:
+                continue
+            a = np.mean([c["sampler_found"] for c in v["sa"]])
+            b = np.mean([c["sampler_found"] for c in weak_by[k]["sa"]])
+            better += a > b
+            worse += a < b
+        assert better < worse, "text: more sweeps did not raise the valid-sample rate"
+        assert all(sv[G] <= wv[G] for G in (8, 16, 32)), "text: 400 sweeps not above 40 sweeps at any size"
+        put("StrongBetter", str(better))
+        put("StrongWorse", str(worse))
         put("StrongText", (
-            f"A weak search is part of the story. On {len(sk)} city instances (three per city, size and demand) an annealer "
+            f"More search did not help. On {len(sk)} city instances (three per city, size and demand) an annealer "
             f"with 400 instead of 40 sweeps found a valid plan in {sv[8]:.1f}, {sv[16]:.1f} and {sv[32]:.1f}\\% of calls "
             f"on solvable instances at 8, 16 and 32 groups, against {wv[8]:.1f}, {wv[16]:.1f} and {wv[32]:.1f}\\% with 40 "
-            f"sweeps on the same instances, at {st[8]:.1f}, {st[16]:.1f} and {st[32]:.1f}~s per call, still slower than "
-            f"the MILP."))
+            f"sweeps on the same instances; per instance it did better on {better} and worse on {worse}, at "
+            f"{st[8]:.1f}, {st[16]:.1f} and {st[32]:.1f}~s per call. The limit is the encoding and its penalty weight, "
+            f"not the length of the search."))
         assert all(st[G] * 1000 > city_milp[G] for G in (8, 16, 32)), "text: the long annealer is slower than the MILP"
         res["strong"] = (sv, wv, st)
     else:
         put("StrongText", "")
+    # ---- plan quality of the verified loop at city scale, and the deadline curve of the certificate
+    if city2:
+        F = [r for r in city2["city"] if r["feasible"]]
+        dr = [x for r in F for x in r["draws"]["fixed"]]
+        put("LoopDraws", f"{len(dr):,}")
+        put("LoopOpt", f"{100 * np.mean([x['optimal'] for x in dr]):.1f}")
+        put("LoopGapMed", f"{np.median([x['gap_pct'] for x in dr]):.1f}")
+        put("LoopGapMean", f"{np.mean([x['gap_pct'] for x in dr]):.1f}")
+        put("LoopGapNinety", f"{np.percentile([x['gap_pct'] for x in dr], 90):.1f}")
+        for tool, tg in (("greedy", "Greedy"), ("sampler", "Sampler"), ("milp", "Milp")):
+            put(f"LoopSrc{tg}", str(sum(x["tool"] == tool for x in dr)))
+        assert sum(x["tool"] == "greedy" for x in dr) > sum(x["tool"] == "sampler" for x in dr), \
+            "text: greedy supplied more plans than the sampler"
+        allc = city2["city"]
+        ms = np.array([r["milp_ms"] for r in allc]) / 1000
+        fe = np.array([r["feasible"] for r in allc])
+        for t, tg in ((1, "One"), (2, "Two"), (5, "Five"), (10, "Ten"), (30, "Thirty")):
+            put(f"Dl{tg}", str(int((ms > t).sum())))
+            assert fe[ms > t].all(), "text: every instance above a deadline had a valid plan"
+        assert not any(r["greedy_valid"] and not r["feasible"] for r in allc), "greedy never contradicts the MILP"
     return res
