@@ -1,0 +1,14 @@
+{
+ "note": "Circuit-size macros computed by post_p1.py / post_p1_r3.py from the 30 development instances with the main repository's twin backend (backend.simulation.hqrl_demo), copied verbatim from the delivered nums.tex of 14 Oct 2026. Used only when that backend cannot be imported.",
+ "macros": {
+  "ZZX": "14.0",
+  "ZZXY": "2.0",
+  "OvPairs": "2.0",
+  "CnotX": "28",
+  "CnotXY": "28",
+  "CnotGM": "150",
+  "CnotW": "12",
+  "CnotMCP": "122",
+  "NAnc": "10"
+ }
+}

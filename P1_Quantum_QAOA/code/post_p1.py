@@ -14,7 +14,10 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[4]
 sys.path[:0] = [str(ROOT), str(HERE.parent)]
 import qaoa_sim as Q  # noqa: E402
-from exp_p1 import disrupted  # noqa: E402
+try:
+    from exp_p1 import disrupted  # noqa: E402  needs the main repository's twin backend
+except ImportError:
+    disrupted = None  # standalone copy: circuit-size macros come from p1_backend_macros.json
 
 WORK, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 j = json.loads((WORK / "p1.json").read_text(encoding="utf-8"))
@@ -59,15 +62,20 @@ put("GainXYoverX", f"{best_xy / Qd[(1.0, 'x', 4)]['popt']:.1f}")
 
 # circuit resources per layer, averaged over the 30 main instances (G = 4)
 zz_x, zz_xy, ov = [], [], []
-for i in range(s["n_instances"]):
+for i in range(s["n_instances"] if disrupted else 0):
     inst = Q.instance_from_engine(disrupted(42 + 17 * i), 4)
     pairs = len(Q.overload_pairs(inst))
     ov.append(pairs)
     zz_x.append(inst["G"] * 3 + pairs)  # one-hot penalty couples the 3 qubits of a group
     zz_xy.append(pairs)
-put("ZZX", f"{np.mean(zz_x):.1f}")
-put("ZZXY", f"{np.mean(zz_xy):.1f}")
-put("OvPairs", f"{np.mean(ov):.1f}")
+if disrupted:
+    put("ZZX", f"{np.mean(zz_x):.1f}")
+    put("ZZXY", f"{np.mean(zz_xy):.1f}")
+    put("OvPairs", f"{np.mean(ov):.1f}")
+else:
+    BK = json.loads((WORK / "p1_backend_macros.json").read_text(encoding="utf-8"))["macros"]
+    for k in ("ZZX", "ZZXY", "OvPairs"):
+        put(k, BK[k])
 
 # main table rows
 lines = []
@@ -167,7 +175,7 @@ assert spread[("xy", 1.0)][3] < 0.5, "text: most probability on suboptimal plans
 
 # global depolarizing estimate: F = (1-eps)^N2, P_noisy = F P_opt + (1-F) n_opt / 2^n
 nopt = np.mean([b["n_opt"] for b in j["base"] if b["feasible_instance"]])
-ov_mean = float(np.mean(ov))
+ov_mean = float(np.mean(ov)) if ov else float(BK["OvPairs"])  # stored mean (one decimal) without the backend
 def n2(kind, p, cw):
     return p * (12 + ov_mean) + (cw * 4 if kind == "xy" else 0)
 noise_rows, best_depth = [], {}

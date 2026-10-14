@@ -1,0 +1,11 @@
+{
+ "sizes": [
+  4,
+  5
+ ],
+ "instances_per_size": 5,
+ "angles_per_instance": 4,
+ "p": 4,
+ "runs": 40,
+ "max_abs_amplitude_diff": 1.5823112613210482e-16
+}

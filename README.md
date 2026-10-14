@@ -41,7 +41,7 @@ Inside each `pdf_and_tex/`:
 
 | Paper | Status |
 |---|---|
-| P1 | Third reviewer round done (`latest_14_oct/`). A fourth round (larger instances, varied disruptions) was still running when this snapshot was taken. |
+| P1 | Fourth round done (`latest_14_oct/`): size test with 150 instances at 15 to 27 qubits added from stored results. The varied-disruption run (`exp_p1_r4.py dis`) still needs the main repository. |
 | P2 | Second round done; PDFs are final for that round. The third round was stopped part way, so `P2_Agentic_AI/code/paper.tex` is half edited. `paper_before_r3.tex.bak` is the version that matches the PDFs. |
 | P3 | Second round PDFs in `latest_14_oct/`. |
 | P4 | Second round open (basin folds still to run). |

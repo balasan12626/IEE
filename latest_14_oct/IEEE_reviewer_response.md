@@ -93,6 +93,24 @@ New title: "One-Hot-Preserving QAOA for Flood Shelter Assignment: Pairwise Capac
 
 Build: `build_series.py p1` -> 6 pages (blind and camera), REFERENCES OK, ALL CHECKS PASSED, no Type 3 fonts. Style: 4,618 words, burstiness 0.58, no em dashes in prose, tell words: "significant" (statistical use only). Old P1 PDFs are in `_before_revision3/`.
 
+### Round 4 (14 Oct 2026, size test from stored results)
+
+No new training was run. The size data in `p1_r4_sub.json` (written by `exp_p1_r4.py sub` in the main repository) were already stored but not yet in the paper. `post_p1_r4.py` now reads them, writes the macros and table, and asserts every claim below. The disruption run (`exp_p1_r4.py dis`, file `p1_r4_dis.json`) was never made; the script now skips it when the file is missing.
+
+| # | Comment | Status | What changed (measured numbers) |
+|---|---|---|---|
+| M3 | scaling evidence thin (10 instances, 15 and 18 qubits) | ✅ | New Table V: 30 new twin instances for each of G = 5..9 (15 to 27 qubits, 150 in all), simulated exactly on the 3^G one-hot amplitudes. The 12-qubit set of rule (7) beat per-instance training at every size (Holm p <= 0.027 over 10 tests; 15 qubits 0.192 vs 0.111, 27 qubits 0.003 vs 0.001). The energy-rule set won on at least 22 of 30 at every size but was significant only at 21 and 24 qubits. Per-instance training fell below P_opt = 0.01 on at least 28 of 30 instances from 21 qubits on. |
+| M3 | (new caveat, added by us) | ✅ claim narrowed | The absolute values are reported as a limit: P_opt of the fixed set fell about 2.9-fold per added group; from 24 qubits every instance was capacity-binding and at most 0.053 of the probability lay on feasible plans. Abstract, discussion and conclusion say so, and the discussion names a capacity-aware mixer or slack encoding as the next step. |
+| M3 | subspace simulator validated? | ✅ | New `exp_p1_subcheck.py` (no backend needed): 40 random 12- and 15-qubit circuits, ring-XY, p = 4; largest amplitude difference to the full statevector 1.6e-16 (`p1_subcheck.json`). |
+| M2 | varied disruptions | ❌ not done | Needs the main repository's twin backend, which is not in this snapshot. Still listed as a limitation. |
+| Minor | Table II 9 pt too wide | ✅ | Column spacing reduced; no overfull boxes. |
+
+Other changes: the global depolarising model is now one sentence (no equation); captions and several paragraphs were shortened to keep 6 pages. The oracle caveat on rule (7) stays in the abstract and in Section IV-A.
+
+Standalone build: this repository has no `backend/`, so `post_p1.py` and `post_p1_r3.py` take nine circuit-size macros (ZZX, ZZXY, OvPairs, CnotX, CnotXY, CnotGM, CnotW, CnotMCP, NAnc) from `p1_backend_macros.json`, a verbatim copy of the delivered round-3 `nums.tex`. With the backend present they are recomputed as before. All other 419 round-3 macros were regenerated from the stored JSON and match the delivered `nums.tex` exactly.
+
+Build (Linux, TeX Live 2023): blind and camera copies 6 pages, references in first-citation order, no undefined references, no overfull boxes, all fonts embedded, no Type 3 fonts, no author names in the blind copy. Round-3 PDFs are in `_before_revision4/`.
+
 ---
 
 ## Our own score estimate (not a real review)
@@ -100,11 +118,11 @@ Build: `build_series.py p1` -> 6 pages (blind and camera), REFERENCES OK, ALL CH
 | Criterion (out of 5) | P1 | P2 |
 |---|---|---|
 | Originality | 3 | 3.3 |
-| Technical soundness | 4 | 4 |
+| Technical soundness | 4.2 | 4 |
 | Clarity | 4 | 4 |
-| Significance | 3.3 | 3.5 |
+| Significance | 3.5 | 3.5 |
 | Reproducibility | 4.3 | 4 |
-| **Overall** | **about 3.8** | **about 3.8** (was 3.4) |
+| **Overall** | **about 3.9 to 4.0** (was 3.8) | **about 3.8** (was 3.4) |
 
 Only the conference reviewers give the real score.
 
@@ -113,6 +131,8 @@ Only the conference reviewers give the real score.
 1. **P2:** a co-author fills in the second-annotator sheet; we then report Cohen's kappa (highest value, no API calls).
 2. **P2:** one more model family (Llama or Qwen); needs approval for API calls.
 3. **P1:** run the fixed-angle circuit on real hardware or a hardware noise model.
+4. **P1:** run `exp_p1_r4.py dis` (three other disruption patterns) in the main repository; `post_p1_r4.py` already writes its macros and table rows. This answers the last open major comment (M2).
+5. **P1:** a capacity-aware mixer (or slack encoding) test at 21 to 27 qubits, since capacity is now the main stated limit.
 
 ## Submission checklist
 

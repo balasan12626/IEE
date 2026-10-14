@@ -259,14 +259,20 @@ def extend(put, work, out):
     from pathlib import Path
     sys.path[:0] = [str(Path(__file__).resolve().parent.parent)]
     import qaoa_sim as Q
-    from exp_p1 import disrupted
-    for i in ids:
-        ov.append(len(Q.overload_pairs(Q.instance_from_engine(disrupted(42 + 17 * i), 4))))
-    ov = float(np.mean(ov))
     G4, n = 4, 12
     w_cnot = 3 * G4  # W_3 per group: one controlled-H (1 CNOT) and two CNOTs, checked in exp notes
     mcp = 2 * (n - 2) * 6 + 2  # C^{n-1}-phase with n-2 ancillas: 2(n-2) Toffolis (6 CNOTs) + one controlled phase
-    cn = {"x": 2 * (n + ov), "xy": 2 * ov + 2 * n, "grover": 2 * ov + 2 * w_cnot + mcp}
+    try:
+        from exp_p1 import disrupted
+    except ImportError:  # standalone copy without the twin backend: stored counts of the delivered build
+        bk = json.loads((work / "p1_backend_macros.json").read_text(encoding="utf-8"))["macros"]
+        cn = {"x": float(bk["CnotX"]), "xy": float(bk["CnotXY"]), "grover": float(bk["CnotGM"])}
+        assert (bk["CnotW"], bk["CnotMCP"], bk["NAnc"]) == (str(w_cnot), str(mcp), str(n - 2))
+    else:
+        for i in ids:
+            ov.append(len(Q.overload_pairs(Q.instance_from_engine(disrupted(42 + 17 * i), 4))))
+        ov = float(np.mean(ov))
+        cn = {"x": 2 * (n + ov), "xy": 2 * ov + 2 * n, "grover": 2 * ov + 2 * w_cnot + mcp}
     put("CnotX", f"{cn['x']:.0f}")
     put("CnotXY", f"{cn['xy']:.0f}")
     put("CnotGM", f"{cn['grover']:.0f}")

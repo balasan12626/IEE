@@ -24,7 +24,8 @@ WORD = {5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten"}
 
 def extend(put, work, out):
     sub = json.loads((work / "p1_r4_sub.json").read_text(encoding="utf-8"))
-    dis = json.loads((work / "p1_r4_dis.json").read_text(encoding="utf-8"))
+    dis_file = work / "p1_r4_dis.json"  # M2 run not done yet: the size part is reported alone
+    dis = json.loads(dis_file.read_text(encoding="utf-8")) if dis_file.exists() else None
     R = {"sub": {}, "dis": {}}
     rows_tab = []
 
@@ -38,7 +39,8 @@ def extend(put, work, out):
         u = np.array([r["uniform"] for r in g])
         data[G] = {"t": t, "u": u, "popt": np.array([r["popt"] for r in g]),
                    "energy": np.array([r["energy"] for r in g]), "bind": int(sum(r["binding"] for r in g)),
-                   "nfev": float(np.mean([r["nfev"] for r in g])), "tried": sub["screened"][str(G)]["tried"]}
+                   "nfev": float(np.mean([r["nfev"] for r in g])), "tried": sub["screened"][str(G)]["tried"],
+                   "feas": np.array([r["popt:feas"] for r in g]), "tfeas": np.array([r["trained:feas"] for r in g])}
         for rule in ("popt", "energy"):
             tests.append((G, rule))
     raw = [wilcoxon(data[G][rule], data[G]["t"]).pvalue for G, rule in tests]
@@ -48,6 +50,8 @@ def extend(put, work, out):
     put("ScQubitsMax", str(3 * sizes[-1]))
     put("ScQubitsMin", str(3 * sizes[0]))
     put("ScGMax", str(sizes[-1]))
+    put("ScGMin", str(sizes[0]))
+    assert sizes == list(range(sizes[0], sizes[-1] + 1)), "text: consecutive sizes"
     put("ScN", str(len(data[sizes[0]]["t"])))
     put("ScNTotal", str(sum(len(data[G]["t"]) for G in sizes)))
     put("ScEvals", f"{np.mean([data[G]['nfev'] for G in sizes]):,.0f}")
@@ -75,9 +79,46 @@ def extend(put, work, out):
             put(f"Sc{w}{tg}MinGain", f"{np.min(f / d['u']):.0f}")
         R["sub"][G] = res
         o, e = res["popt"], res["energy"]
-        rows_tab.append(f"$G={G}$ ({3 * G}) & {len(d['t'])} & "
-                        f"{d['t'].mean():.3f} & {o['f'].mean():.3f} & {o['med']:+.3f} & ${sci(o['p'])}$ & "
-                        f"{e['f'].mean():.3f} & {e['med']:+.3f} & ${sci(e['p'])}$\\\\")
+        put(f"Sc{w}OFeas", f"{d['feas'].mean():.3f}")
+        put(f"Sc{w}TrainedSucc", f"{s32(d['t']):.1f}")
+        put(f"Sc{w}OSucc", f"{s32(o['f']):.1f}")
+        rows_tab.append(f"{3 * G} & {d['t'].mean():.4f} & {o['f'].mean():.4f} & ${sci(o['p'])}$ & "
+                        f"{e['f'].mean():.4f} & ${sci(e['p'])}$ & {d['feas'].mean():.2f} & "
+                        f"{s32(d['t']):.1f} & {s32(o['f']):.1f}\\\\")
+    # ---- size claims made in the text (Section "Larger Instances")
+    G0, G1 = sizes[0], sizes[-1]
+    oO = [R["sub"][G]["popt"] for G in sizes]
+    oE = [R["sub"][G]["energy"] for G in sizes]
+    assert all(x["p"] < 0.05 and x["f"].mean() > R["sub"][G]["t"].mean() for x, G in zip(oO, sizes)), \
+        "text: rule (7) set above per-instance training at every size after Holm"
+    put("ScOMaxP", sci(max(x["p"] for x in oO)))
+    esig = [3 * G for x, G in zip(oE, sizes) if x["p"] < 0.05]
+    assert esig == [21, 24], "text: energy-rule set significant after Holm only at 21 and 24 qubits"
+    put("ScESigQ", " and ".join(str(q) for q in esig))
+    put("ScEWinsMin", str(min(x["wins"] for x in oE)))
+    assert all(x["wins"] > len(data[G]["t"]) / 2 for x, G in zip(oE, sizes)), "text: energy rule wins most instances"
+    decay = (data[G1]["popt"].mean() / data[G0]["popt"].mean()) ** (1 / (G1 - G0))
+    put("ScDecay", f"{1 / decay:.1f}")
+    assert all(data[G]["popt"].mean() > data[G + 1]["popt"].mean() for G in sizes[:-1]), "text: P_opt falls with size"
+    big = [G for G in sizes if 3 * G >= 21]
+    put("ScBigQ", str(3 * big[0]))
+    put("ScBigTrainedLowMin", str(min(int((data[G]["t"] < 0.01).sum()) for G in big)))
+    put("ScBigOLowMin", str(min(int((data[G]["popt"] < 0.01).sum()) for G in big)))
+    put("ScBelowUniMax", str(max(int((data[G]["popt"] < data[G]["u"]).sum()) for G in sizes)))
+    assert all(int((data[G]["popt"] < data[G]["u"]).sum()) == 0 for G in sizes if 3 * G <= 18), \
+        "text: fixed angles above uniform on every instance up to 18 qubits"
+    put("ScBelowUniFirstQ", str(3 * min(G for G in sizes if (data[G]["popt"] < data[G]["u"]).any())))
+    put("ScBindAllFromQ", str(3 * min(G for G in sizes if all(data[H]["bind"] == len(data[H]["t"]) for H in sizes if H >= G))))
+    put("ScFeasMaxBig", f"{max(data[G]['feas'].mean() for G in sizes if 3 * G >= 24):.3f}")
+    assert data[G1]["feas"].mean() < 0.1 and data[G0]["feas"].mean() > 0.4, "text: feasibility collapses with size"
+    sc = json.loads((work / "p1_subcheck.json").read_text(encoding="utf-8"))
+    assert sc["max_abs_amplitude_diff"] < 1e-12
+    e10 = int(np.floor(np.log10(sc["max_abs_amplitude_diff"])))
+    put("SubCheckErr", f"{sc['max_abs_amplitude_diff'] / 10 ** e10:.1f}\\times10^{{{e10}}}")
+    put("SubCheckRuns", str(sc["runs"]))
+    if dis is None:
+        (out / "tab_beyond.tex").write_text("\n".join(rows_tab), encoding="utf-8")
+        return R
     rows_tab.append("\\addlinespace[2pt]")
 
     # ------------------------------------------------------------------ M2: other disruption patterns
