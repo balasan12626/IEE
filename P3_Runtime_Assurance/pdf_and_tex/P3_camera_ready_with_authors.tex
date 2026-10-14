@@ -51,7 +51,7 @@ abisheksengodan18@gmail.com}
 \maketitle
 
 \begin{abstract}
-Quantum and annealing-based optimizers are proposed for disaster logistics, but their samples carry no guarantee of validity and their penalty encodings are often inexact. We study a re-planning loop that reassigns evacuation groups to shelters as roads close and shelters fail. It verifies every sample exactly, falls back to a greedy rule and, before calling a human, asks a mixed-integer program (MILP) whether any valid plan exists. On \TwinEvents{} events of a flood digital twin, dispatching the most frequent sample unchecked would have sent an invalid plan in \TwinRawFeasQ\% of draws on solvable events for the Quantum Approximate Optimization Algorithm (QAOA) and \TwinRawFeasSA\% for simulated annealing; even the best penalty-free QAOA sample was invalid in \BasePfQSol\%, because the pairwise capacity penalty misses overloads by three or more groups. The verified loop dispatched none. On \CityN{} instances on OpenStreetMap networks of six Indian cities, annealing found a valid plan in \CitySAFoundEight\% of calls at 8 groups and \CitySAFoundThirtyTwo\% at 32, neither retuning nor a one-hot annealer lifted the 32-group rate above \OhValidThirtyTwo\%, and an uncertified loop escalated \CityFalseEsc\% of solvable cases. A solver-first loop that waits 1~s for the MILP and keeps the sampler as fallback dispatched an optimal plan in \DfOptOne\% of solvable city calls, against \LoopOpt\% when the sampler goes first. Solver time-outs must never be read as infeasibility; at these sizes the samplers add no value, and we claim no quantum advantage.
+Quantum and annealing-based optimizers are proposed for disaster logistics, but their samples carry no guarantee of validity and their penalty encodings are often inexact. We study a re-planning loop that reassigns evacuation groups to shelters as roads close and shelters fail. It verifies every sample exactly, falls back to a greedy rule and, before calling a human, asks a mixed-integer program (MILP) whether any valid plan exists. On \TwinEvents{} events of a flood digital twin, dispatching the most frequent sample unchecked would have sent an invalid plan in \TwinRawFeasQ\% of draws on solvable events for the Quantum Approximate Optimization Algorithm (QAOA) and \TwinRawFeasSA\% for simulated annealing; even the best penalty-free QAOA sample was invalid in \BasePfQSol\%, because the pairwise capacity penalty misses overloads by three or more groups. The verified loop dispatched none. On \CityN{} instances on OpenStreetMap networks of six Indian cities, annealing found a valid plan in \CitySAFoundEight\% of calls at 8 groups and \CitySAFoundThirtyTwo\% at 32, a one-hot annealer raised the 32-group rate only to \OhValidThirtyTwo\% and retuning did not change it, and an uncertified loop escalated \CityFalseEsc\% of solvable cases. A solver-first loop that waits 1~s for the MILP and keeps the sampler as fallback dispatched an optimal plan in \DfOptOne\% of solvable city calls, against \LoopOpt\% when the sampler goes first. A solver time-out is not a proof of infeasibility. At these sizes the samplers add no value; we claim no quantum advantage.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -66,7 +66,7 @@ Safety-critical systems run unreliable components inside a \emph{runtime-assuran
 \item A runtime-assurance loop for sampling optimizers with an exact plan verifier, a greedy fallback and a \emph{certified escalation} step that uses a mixed-integer program (MILP) to decide whether any valid plan exists (Fig.~\ref{fig:loop}).
 \item A measurement on twin episodes with QAOA \cite{Farhi2014,Hadfield2019} and simulated annealing \cite{Kirkpatrick1983} of how often unverified dispatch would be unsafe, for the most frequent, the lowest-energy and the best penalty-free sample, with a classification of every unsafe sample by the rule it breaks.
 \item A city-scale study on OpenStreetMap road graphs of six Indian cities, beyond the reach of enumeration, showing where samplers and uncertified loops fail and what the certificate costs in time.
-\item A comparison with an exact-solver-first loop in time and plan cost, and a shot-budget bound with an adaptive budget.
+\item A comparison with an exact-solver-first loop in time and plan cost, which our data favour, with the sampler kept as fallback; and a shot-budget bound with an adaptive budget.
 \end{enumerate}
 All QAOA results are classical simulations; we make no claim of quantum speed-up.
 
@@ -77,7 +77,7 @@ All QAOA results are classical simulations; we make no claim of quantum speed-up
 
 \textit{Evacuation planning.} Shelter allocation has long been solved with integer programming \cite{Sherali1991}; modern MILP solvers such as HiGHS \cite{Huangfu2018} make exact solutions cheap at the sizes of a city district. Repairing a plan rather than re-planning from scratch reduces disruption \cite{Fox2006}.
 
-We are not aware of runtime assurance applied to sampling optimizers; the sampler studies cited here report solution quality per call, not what happens when a loop acts on the answer.
+Solvers often post-process samples for feasibility, but we are not aware of a study that measures how often acting on unchecked samples would be unsafe, or that certifies the escalation to a human; the sampler studies cited here report solution quality per call.
 
 
 \section{Problem and Loop}
@@ -249,9 +249,9 @@ City & Solvable & Valid & Unsafe & False esc. & Greedy & MILP s\\
  & & sample & & uncert. & found & (median)\\
 \midrule
 Guwahati & 58/60 & 93.1 & 12.7 & 0.0 & 100.0 & 0.01\\
-Mumbai & 50/60 & 21.6 & 96.7 & 3.8 & 96.0 & 0.15\\
-Patna & 50/60 & 5.2 & 100.0 & 6.0 & 94.0 & 0.23\\
 Chennai & 50/60 & 22.6 & 86.5 & 8.0 & 92.0 & 0.19\\
+Patna & 50/60 & 5.2 & 100.0 & 6.0 & 94.0 & 0.23\\
+Mumbai & 50/60 & 21.6 & 96.7 & 3.8 & 96.0 & 0.15\\
 Delhi & 44/60 & 30.2 & 85.8 & 3.4 & 95.5 & 0.06\\
 Kolkata & 5/60 & 40.0 & 100.0 & 20.0 & 80.0 & 0.01\\
 \bottomrule
@@ -284,7 +284,7 @@ City, SA, $G=32$ & 1030 & 100.0 & 0.0 & 0.0 & 0.0\\
 
 \subsection{Usual Practice and an Exact Solver First}
 \label{sec:base}
-Table~\ref{tab:base} scores the integrations that sampler studies usually rely on. \BaseText{}
+Table~\ref{tab:base} scores three ways a naive loop could pick its plan. \BaseText{}
 
 \begin{table}[t]
 \caption{Unsafe if dispatched unverified, by integration (\% of draws; city: \% of calls)}
@@ -307,7 +307,7 @@ verified loop (this work) & 0.0 & 0.0 & 0.0 & 0.0 & 0.0\\
 
 \ExactFirstText{} \StrongText{}
 
-\textit{A one-hot annealer.} Most unsafe city samples broke the one-hot rule (Table~\ref{tab:viol}), so we replaced the bit flips with moves that reassign one group, on the same energy, chains, sweeps and seeds, which keeps every sample one-hot. On solvable instances it found a valid plan in \OhValidEight, \OhValidSixteen{} and \OhValidThirtyTwo\% of calls at 8, 16 and 32 groups, against \OhValidOldEight, \OhValidOldSixteen{} and \OhValidOldThirtyTwo\% for bit flips (better on \OhBetter{} instances, worse on \OhWorse, $p=\OhP$). Its top sample was still unsafe in \OhUnsafeEight{} to \OhUnsafeThirtyTwo\% of all calls, and the uncertified loop's false escalations changed by less than one point. Of its unsafe top samples, \OhClsBlind\% overloaded a shelter without any penalty and \OhClsForb\% used a forbidden pair, so the encoding's blind spot causes most of its failures and the search the rest. Retuning the bit-flip annealer on \SwN{} instances helped only at small sizes: with the penalty weight scaled by 0.25 to 4, or a temperature schedule scaled to the costs, its valid rate ranged over \SwMinEight--\SwMaxEight, \SwMinSixteen--\SwMaxSixteen{} and \SwMinThirtyTwo--\SwMaxThirtyTwo\% at 8, 16 and 32 groups; at 32 groups every setting succeeded on the same \SwBigInst{} instances.
+\textit{A one-hot annealer.} Most unsafe city samples broke the one-hot rule (Table~\ref{tab:viol}), so we replaced the bit flips with moves that reassign one group, on the same energy, chains, sweeps and seeds, which keeps every sample one-hot. On solvable instances it found a valid plan in \OhValidEight, \OhValidSixteen{} and \OhValidThirtyTwo\% of calls at 8, 16 and 32 groups, against \OhValidOldEight, \OhValidOldSixteen{} and \OhValidOldThirtyTwo\% for bit flips (better on \OhBetter{} instances, worse on \OhWorse, Wilcoxon $p=\OhP$). Its top sample was still unsafe in \OhUnsafeEight{} to \OhUnsafeThirtyTwo\% of all calls, and the uncertified loop's false escalations changed by less than one point. Of its unsafe top samples, \OhClsBlind\% overloaded a shelter without any penalty and \OhClsForb\% used a forbidden pair, so the encoding's blind spot causes most of its failures and the search the rest. Retuning the bit-flip annealer on \SwN{} instances helped at 8 groups but not at 32: with the penalty weight scaled by 0.25 to 4, or a temperature schedule scaled to the costs, its valid rate ranged over \SwMinEight--\SwMaxEight, \SwMinSixteen--\SwMaxSixteen{} and \SwMinThirtyTwo--\SwMaxThirtyTwo\% at 8, 16 and 32 groups; at 32 groups every setting succeeded on the same \SwBigInst{} instances.
 
 \textit{Solver first, with a deadline.} We replayed the city calls with the MILP started first and the sampler and greedy rule run alongside: the loop waits at most $d$ for the MILP and otherwise dispatches the cheapest verified fallback plan, or escalates marked uncertified. It dispatched an optimal plan in \DfOptHalf, \DfOptOne, \DfOptTwo{} and \DfOptFive\% of calls on solvable instances for $d=0.5$, 1, 2 and 5~s, against \LoopOpt\% for the sampler-first loop, and escalated at most \DfUncHalf\% of solvable cases uncertified. This is an offline replay from the measured solve times, and it ignores the incumbent a stopped solver returns. Re-solved with real time limits on a second, faster computer, HiGHS returned a valid plan on every solvable instance within 0.5~s, the optimum on \RdOptHalf\% (\RdOptOne\% within 1~s), and proved all \RdInfHalf{} infeasible instances infeasible.
 
@@ -315,7 +315,7 @@ verified loop (this work) & 0.0 & 0.0 & 0.0 & 0.0 & 0.0\\
 \ShotText{} By (\ref{eq:shots}), a sampler with $q=\ShotQ$ needs \ShotNeed{} shots for $\epsilon=\ShotEps$, more than the \Shots{} used here.
 
 \section{Discussion and Limitations}
-We measure sampler quality and loop safety separately. Safety holds by construction whenever every sample is verified, a classical plan is always available and the certificate finishes in time, and it holds for any sampler plugged in. The sampler decides how often the exact components have to step in. At city scale the pairwise capacity QUBO broke down and the sampler's valid-plan rate fell to \CitySAFoundThirtyTwo\% at 32 groups, so an uncertified loop would have woken an officer for cases that a MILP solved in seconds. At every size we tested, calling the MILP first would have been faster in median time and optimal whenever it finished; the samplers served only as stand-ins for future hardware, and the loop applies unchanged to any sampler.
+We measure sampler quality and loop safety separately. Safety holds by construction whenever every sample is verified, a classical plan is always available and the certificate finishes in time, and it holds for any sampler plugged in. The sampler decides how often the exact components have to step in. At city scale most annealing samples were not even complete assignments, and the valid-plan rate fell to \CitySAFoundThirtyTwo\% at 32 groups, so an uncertified loop would have woken an officer for cases that a MILP solved in seconds. At every size we tested, calling the MILP first would have been faster in median time and optimal whenever it finished; the samplers stand in for future hardware, which we did not test, and the loop applies unchanged to any sampler.
 
 The MILP can also time out. No run reached our \CityLimitS~s limit, but deadlines of 1, 2, 5, 10 and 30~s would have stopped \DlOne, \DlTwo, \DlFive, \DlTen{} and \DlThirty{} city instances with neither plan nor proof, and all of them had plans. An implementation that reads a time-out as ``no plan'' would have escalated them with a false certificate.
 
@@ -327,7 +327,7 @@ We draw four rules from these results:
 \item Keep the full shot budget when plan quality matters. The adaptive budget never changed an escalation, but it lowered QAOA's rate of optimal plans from \FixedOptQ\% to \AdaptOptQ\%.
 \end{enumerate}
 
-\textit{Threats to validity.} The penalty weight $P$ follows the usual QUBO recipe \cite{Glover2019}; rescaling it changed little, and the overloads that the pairwise term misses stay invisible at any weight. QAOA was trained per event with a fixed budget and simulated without noise at 12 variables, and the city study uses simulated annealing as its only sampler, so we expect a noisy hardware sampler to produce valid samples less often. Intervals resample events and instances, not draws.
+\textit{Threats to validity.} The penalty weight $P$ follows the usual QUBO recipe \cite{Glover2019}; rescaling it helped at 8 groups but not at 32, and the overloads that the pairwise term misses stay invisible at any weight. QAOA was trained per event with a fixed budget and simulated without noise at 12 variables, and the city study uses simulated annealing as its only sampler, so we expect a noisy hardware sampler to produce valid samples less often. Intervals resample events and instances, not draws.
 
 City demand is synthetic, capacities are estimates by building type, and every city instance uses the same kind of disruption: three closed roads and one failed shelter. The MILP is exact, but the slowest 320-variable instance needed \MilpSlowS~s, and regional problems will hit any fixed limit more often. Escalation was tested for infeasibility caused by failures and closures, and no officer took part in the evaluation, so the cost of a false escalation to a real operations room is not measured here.
 

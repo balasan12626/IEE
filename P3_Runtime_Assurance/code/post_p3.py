@@ -443,7 +443,7 @@ if (WORK / "p3_r5.json").exists():
     post_p3_r5.extend(put, WORK)
     assert abs(float(M["RwTopUnsafeEight"]) - float(M["OhUnsafeOldEight"])) < 2, "text: pooling did not change the picture"
     assert all(float(M[f"RwTopUnsafeSol{t}"]) > 70 for t in ("Sixteen", "ThirtyTwo")), "text: still most calls at 16, 32"
-    assert float(M["SwMaxThirtyTwo"]) <= float(M["OhValidThirtyTwo"]) and float(M["CitySAFoundThirtyTwo"]) <= float(M["OhValidThirtyTwo"]), \
+    assert float(M["SwMaxThirtyTwo"]) <= float(M["OhValidThirtyTwo"]) and float(M["CitySAFoundThirtyTwo"]) < float(M["OhValidThirtyTwo"]), \
         "abstract: neither retuning nor the one-hot annealer above the one-hot rate at 32 groups"
     assert float(M["RdValHalf"]) == 100 and int(M["RdInfHalf"]) == int(M["InfN"]), "text: valid plan and proofs in 0.5 s"
 
