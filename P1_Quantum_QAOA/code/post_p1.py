@@ -308,6 +308,9 @@ put("FgOverUni", f"{R2['fg'][4].mean() / R3['unifeas']:.1f}")
 import post_p1_r4  # noqa: E402  fourth revision: fixed angles at 15-27 qubits and under other disruption patterns
 
 R4 = post_p1_r4.extend(put, WORK, OUT)
+import post_p1_r5  # noqa: E402  fifth revision: exact (minimal-set) capacity penalty and HiGHS on the city instances
+
+post_p1_r5.extend(put, WORK, OUT)
 
 with open(OUT / "nums.tex", "w", encoding="utf-8") as f:
     for k, v in M.items():

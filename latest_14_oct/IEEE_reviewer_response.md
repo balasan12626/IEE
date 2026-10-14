@@ -126,18 +126,31 @@ Build (Linux, TeX Live 2023): blind and camera copies 6 pages, references in fir
 
 Prose was edited by hand to plain academic English (no humanizer tool, per CLAUDE.md): staged phrases removed ("tells a different story", "Why does a fixed set work?", "The absolute values temper this result", "The study has limits.", "not our particular one"), one-word last lines tightened. No em dashes in prose, no listed tell words. Build: blind and camera 6 pages, no overfull boxes, references in order, fonts embedded, blind copy anonymous.
 
+### Round 5 (14 Oct 2026, exact capacity penalty and integer programming)
+
+New experiment `exp_p1_r5.py` (runs without the twin backend, about 7 minutes) on the 50 feasible city instances, rebuilt from the frozen snapshot and checked against `p1_cities.json`. Numbers through `post_p1_r5.py`, which asserts every claim. Stored result: `p1_r5.json`.
+
+| Item | Result |
+|---|---|
+| Exact capacity encoding without slack qubits | New Eq. (4): one product term per minimal overloading set. Exact on all 50 instances (checked over all 81 one-hot plans). The pairwise penalty admitted 262 infeasible penalty-free plans in 47 instances; its minimiser was optimal in 74% (exact penalty: 100%). |
+| Feasibility vs optimality (new Table IV) | Trained ring-XY: P_feas 0.601 -> 0.922 (Holm p = 1.5e-6, higher in all 6 cities), P_opt 0.219 -> 0.169 (p = 0.081, not significant), success@32 75.6% -> 81.2% (p = 0.91). Helps capacity-binding instances (0.061 -> 0.125), hurts the others (0.342 -> 0.203). |
+| Gate cost | 66 CNOTs per layer on average (up to 120) against 28. A slack encoding would add 15 to 19 qubits. |
+| Integer programming | HiGHS (scipy.optimize.milp) returns the optimum on every instance in 2.6 ms; exhaustive search 0.39 ms. New reference [26] (Huangfu and Hall, 2018). |
+
+To stay at 6 pages: the per-city table (old Table IV) and the best-of-N gap table (old Table III) were folded into the text (all their claims and tests remain), contribution 4 merged into contribution 1, and the Discussion and Conclusion were shortened. Build: blind and camera 6 pages, no overfull boxes, 28 references in order, blind copy anonymous.
+
 ---
 
 ## Our own score estimate (not a real review)
 
 | Criterion (out of 5) | P1 | P2 |
 |---|---|---|
-| Originality | 3 | 3.3 |
+| Originality | 3.3 | 3.3 |
 | Technical soundness | 4.2 | 4 |
 | Clarity | 4.2 | 4 |
 | Significance | 3.5 | 3.5 |
 | Reproducibility | 4.3 | 4 |
-| **Overall** | **about 4.0 to 4.1** (was 3.8) | **about 3.8** (was 3.4) |
+| **Overall** | **about 4.1 to 4.2** (was 3.8) | **about 3.8** (was 3.4) |
 
 Only the conference reviewers give the real score.
 
