@@ -297,10 +297,15 @@ def extend(put, work, out):
         lo, hi = np.percentile(P[ss, ii].mean(axis=1), [2.5, 97.5])
         mrows.append(f"{name} & {P.mean():.3f} & {lo:.3f}--{hi:.3f} & {F.mean():.3f} & {s32(P):.1f} & "
                      f"{E.mean():,.0f} & " + (f"{c:.0f}" if c is not None else "n/a") + "\\\\")
+        if key in (("x", 1.0), ("xy", 1.0)):  # chance that a feasible sample is optimal (verifier in the loop)
+            cond = float(np.mean(P / F))
+            put("Cond" + ("XY" if key[0] == "xy" else "X"), f"{cond:.2f}")
+            R["cond_" + key[0]] = cond
         if key == ("xy", 1.0):
             put("TwoLevLo", f"{lo:.3f}")
             put("TwoLevHi", f"{hi:.3f}")
     (out / "tab_mixers.tex").write_text("\n".join(mrows), encoding="utf-8")
+    assert R["cond_xy"] > 2 * R["cond_x"], "text: conditional on feasibility XY stays far ahead of X"
     # literature constants (not results): Sycamore two-qubit XEB Pauli error, isolated / simultaneous, Arute et al.
     put("SycIso", "0.36")
     put("SycSim", "0.62")

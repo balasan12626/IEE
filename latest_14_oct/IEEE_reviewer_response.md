@@ -111,6 +111,21 @@ Standalone build: this repository has no `backend/`, so `post_p1.py` and `post_p
 
 Build (Linux, TeX Live 2023): blind and camera copies 6 pages, references in first-citation order, no undefined references, no overfull boxes, all fonts embedded, no Type 3 fonts, no author names in the blind copy. Round-3 PDFs are in `_before_revision4/`.
 
+### Round 4b (14 Oct 2026, open items of the first review and hand edit of the prose)
+
+| Comment (first review) | Status | What changed |
+|---|---|---|
+| Compare conditional on feasibility | ✅ | New sentence in Section VI-A: P_opt / P_feas at p = 4 is 0.28 for XY against 0.08 for X (mean over 5 seeds and 30 instances; macros CondXY, CondX from `post_p1_r3.py`, asserted). X from the one-hot subspace: not run (needs the main repo). |
+| Define P_opt precisely | ✅ | Section V: an optimal plan is a feasible plan of lowest true cost, not always the QUBO minimiser (checked in `qaoa_sim.diagonals`: `obj` is set only on feasible plans). |
+| CVaR alpha tuned? | ✅ | "the only level we tried; it was not tuned" (the scripts only run alpha in {1.0, 0.1}). |
+| Noise: which angles | ✅ | "With angles trained per instance" added (`exp_p1_noise.py` retrains per instance). |
+| Abstract has too many numbers | ✅ | Abstract cut from about 15 numbers to 9, about 195 words. |
+| No code repository cited | ⚠️ please confirm | Added "code and stored results will be released after review". Remove it if the authors do not want to promise this. |
+| Open-Meteo in Acknowledgment, weather not described | ⚠️ open | Not changed: this snapshot has no backend code to show how the twin uses Open-Meteo. Authors: either add one clause on what weather data the twin uses or drop Open-Meteo from the Acknowledgment. |
+| Penalty sweep below 0.25, Grover over seeds, other disruptions | ❌ | Need new runs in the main repository. |
+
+Prose was edited by hand to plain academic English (no humanizer tool, per CLAUDE.md): staged phrases removed ("tells a different story", "Why does a fixed set work?", "The absolute values temper this result", "The study has limits.", "not our particular one"), one-word last lines tightened. No em dashes in prose, no listed tell words. Build: blind and camera 6 pages, no overfull boxes, references in order, fonts embedded, blind copy anonymous.
+
 ---
 
 ## Our own score estimate (not a real review)
@@ -119,10 +134,10 @@ Build (Linux, TeX Live 2023): blind and camera copies 6 pages, references in fir
 |---|---|---|
 | Originality | 3 | 3.3 |
 | Technical soundness | 4.2 | 4 |
-| Clarity | 4 | 4 |
+| Clarity | 4.2 | 4 |
 | Significance | 3.5 | 3.5 |
 | Reproducibility | 4.3 | 4 |
-| **Overall** | **about 3.9 to 4.0** (was 3.8) | **about 3.8** (was 3.4) |
+| **Overall** | **about 4.0 to 4.1** (was 3.8) | **about 3.8** (was 3.4) |
 
 Only the conference reviewers give the real score.
 
