@@ -75,6 +75,9 @@ def extend(put, work, out):
     put("DsCities", str(len(cities)))
     assert all(not (R[k]["f"].mean() > R[k]["t"].mean() and R[k]["p"] < 0.05) for k in R if k[0] != "all"), \
         "text: no fixed set raised P_opt significantly under any pattern"
+    losses = [k for k in R if k[0] != "all" and R[k]["p"] < 0.05 and R[k]["f"].mean() < R[k]["t"].mean()]
+    assert sorted(losses) == [("roads", "cvar"), ("roads", "energy"), ("shelter", "popt")], "text: three losses"
+    put("DsLosses", str(len(losses)))
     assert R[("shelter", "popt")]["p"] < 0.05 and R[("shelter", "popt")]["f"].mean() < R[("shelter", "popt")]["t"].mean()
     assert R[("roads", "energy")]["p"] < 0.05 and R[("roads", "energy")]["f"].mean() < R[("roads", "energy")]["t"].mean()
     assert all(s32(R[("all", r)]["f"]) > s32(R[("all", r)]["t"]) for r, _ in RULES), "text: success@32 rose pooled"

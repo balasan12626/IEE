@@ -139,6 +139,19 @@ New experiment `exp_p1_r5.py` (runs without the twin backend, about 7 minutes) o
 
 To stay at 6 pages: the per-city table (old Table IV) and the best-of-N gap table (old Table III) were folded into the text (all their claims and tests remain), contribution 4 merged into contribution 1, and the Discussion and Conclusion were shortened. Build: blind and camera 6 pages, no overfull boxes, 28 references in order, blind copy anonymous.
 
+### Rounds 6-7 (14 Oct 2026, two independent strict internal reviews: 3.4 before, 3.5 after)
+
+New experiments that run without the twin backend, on the city road networks (results in the snapshot, every claim asserted in `post_p1_r6.py` / `post_p1_r7.py`):
+
+| Item | Result |
+|---|---|
+| Other disruptions (`exp_p1_r6.py`, 147 feasible instances: two roads closed; shelter failed; 70% seat cut) | No fixed set raised P_opt significantly; three lost it (rule (8) with a failed shelter, energy and CVaR sets with two roads closed). Pooled success@32 still rose (74.9-75.1% to 91.7-96.0%). |
+| Angle choice without optima (`exp_p1_r7.py`, leave one city out, 197 instances) | Expected cost of the best verified plan among 32 shots (needs no optima) ranks sets like P_opt (Spearman 0.87 vs 0.45 for energy) and picked the city optima's set in 6/6 folds (this is the twin energy rule's set, not the rule-(8) set). Held out: P_opt 0.256 vs 0.277 (n.s.; lower with two roads closed), success@32 75.1% -> 96.2%. |
+| Finite-shot version (`exp_p1_r7b.py`, one draw of 32 shots per instance, 1,200 repetitions) | Same set in 43%; held-out success@32 of the picks 96.2% on average, 5th percentile 92.9%. |
+| Review fixes | Seed basis of every comparison stated; P_opt/P_feas defined; binding shift between development and held-out seeds; exact-penalty and capacity-share wording ("about half", 52% on a log scale); noiseless noise reference; American spelling; Table I/II/IV notes; intro claim cited. |
+
+Both reviewers judged 4.5 not reachable for this work without new science (a capacity-preserving mixer that helps at 21-27 qubits, or a hardware run); their realistic target is about 4.0 as an honest benchmark paper.
+
 ## Paper 3: round 3 (14 Oct 2026, internal review, no new experiments)
 
 An internal reviewer (scored 2.9 / 5) found the problems below. All numbers come from stored results (`p3_city2.json`, `p3_v2.json`, `p3_r2.json`) through `post_p3.py` / `post_p3_r2.py`, which assert each new claim.

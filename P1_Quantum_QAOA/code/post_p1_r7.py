@@ -46,7 +46,18 @@ def extend(put, work):
             keys += [(rule, "opt"), (rule, "s")]
     adj = dict(zip(keys, holm(raw)))
     v, e, o = res["vcost"], res["energy"], res["popt"]
-    assert v["picks"] == o["picks"], "text: the verified-cost rule picked the oracle's set in every fold"
+    assert v["picks"] == o["picks"], "text: the verified-cost rule picked the set the city optima pick, every fold"
+    ch = json.loads((work / "p1_r3.json").read_text(encoding="utf-8"))["variants"]["xy:1.0"]["4"]["choice"]
+    assert set(v["picks"]) == {ch["energy"]["from_instance"]} and ch["popt"]["from_instance"] != ch["energy"]["from_instance"], \
+        "text: the picked set is the twin energy rule's set, not the twin rule-(8) set"
+    pv = wilcoxon(1 - (1 - v["F"]) ** 32, 1 - (1 - e["F"]) ** 32).pvalue
+    put("LcVvsEP", sci(pv))
+    assert pv < 0.01, "text: verified-cost choice above the energy rule re-applied on cities"
+    k = v["picks"][0]
+    for pat, tg in (("base", "Base"), ("roads", "Roads"), ("shelter", "Shelter"), ("cut", "Cut")):
+        rr = [r for r in R if r["pattern"] == pat]
+        put(f"LcV{tg}Opt", f"{np.mean([r['popt'][k] for r in rr]):.3f}")
+        put(f"LcV{tg}Trained", f"{np.mean([r['trained'] for r in rr]):.3f}")
     put("LcSame", str(sum(a == b for a, b in zip(v["picks"], o["picks"]))))
     put("LcFolds", str(len(cities)))
     for rule, tg in (("vcost", "V"), ("energy", "E")):
@@ -63,6 +74,19 @@ def extend(put, work):
     assert adj[("vcost", "s")] < 0.01 and s32(v["F"]) > s32(v["T"]), "text: success@32 higher"
     assert e["F"].mean() < e["T"].mean(), "text: the energy rule's set had a lower mean P_opt"
     assert s32(v["F"]) > s32(e["F"]), "text: verified-cost rule above the energy rule in success@32"
+    fs = json.loads((work / "p1_r7b.json").read_text(encoding="utf-8"))  # finite-shot selection (exp_p1_r7b.py)
+    S, n_same, n_all = [], 0, 0
+    for c, pk in fs["picks"].items():
+        te = [r for r in R if r["city"] == c]
+        for kk in pk:
+            S.append(s32([r["popt"][kk] for r in te]))
+            n_same += kk == v["picks"][0]
+            n_all += 1
+    put("FsReps", f"{n_all:,}")
+    put("FsSame", f"{100 * n_same / n_all:.0f}")
+    put("FsSucc", f"{np.mean(S):.1f}")
+    put("FsSuccFive", f"{np.percentile(S, 5):.1f}")
+    assert np.percentile(S, 5) > s32(v["T"]) + 10, "text: finite-shot picks still far above per-instance training"
     mv = np.mean([r["vcost"] for r in R], axis=0)
     mp = np.mean([r["popt"] for r in R], axis=0)
     me = np.mean([r["energy"] for r in R], axis=0)

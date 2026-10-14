@@ -109,6 +109,9 @@ def extend(put, work, out):
         "text: fixed angles above uniform on every instance up to 18 qubits"
     put("ScBelowUniFirstQ", str(3 * min(G for G in sizes if (data[G]["popt"] < data[G]["u"]).any())))
     put("ScBindAllFromQ", str(3 * min(G for G in sizes if all(data[H]["bind"] == len(data[H]["t"]) for H in sizes if H >= G))))
+    share = np.log(data[G0]["feas"].mean() / data[G1]["feas"].mean()) / np.log(data[G0]["popt"].mean() / data[G1]["popt"].mean())
+    assert 0.4 < share < 0.6, "text: lower feasibility accounts for about half of the drop (log scale)"
+    put("ScFeasShare", f"{100 * share:.0f}")
     put("ScFeasMaxBig", f"{max(data[G]['feas'].mean() for G in sizes if 3 * G >= 24):.3f}")
     assert data[G1]["feas"].mean() < 0.1 and data[G0]["feas"].mean() > 0.4, "text: feasibility collapses with size"
     sc = json.loads((work / "p1_subcheck.json").read_text(encoding="utf-8"))
