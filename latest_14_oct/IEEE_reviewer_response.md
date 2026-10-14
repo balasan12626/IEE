@@ -159,6 +159,26 @@ An internal reviewer (scored 2.9 / 5) found the problems below. All numbers come
 
 Build: 6 pages (blind and camera), 21 references, no overfull boxes, blind copy anonymous. Old PDFs in `_before_P3_revision3_2026-10-14/`.
 
+## Paper 4: round 2 finished (14 Oct 2026, internal review, no new experiments)
+
+The round-2 source was never built into a PDF (the old PDF of 10 Oct had the round-1 text). It is now built from stored results; `models/flood_evaluation_v4.json` and `flood_model_metadata_v4.json` (from the main repository) are copied into the results snapshot. The basin folds are already in `p4_r2.json`. An internal reviewer scored the round-2 text 3.0 / 5; changes, each asserted in `post_p4.py` / `post_p4_r2.py`:
+
+| Comment | Change |
+|---|---|
+| Calibration blamed on the monsoon | The no-class-weight refit (raw ECE 0.008, BA 0.902, onset 0.863 against 0.898 / 0.852 with the weight) shows that the weighting caused the over-confidence and bought no skill; marked post hoc. "The miscalibration is a monsoon problem" removed. |
+| "there the LSTM led" (onset) | The difference interval (-0.045 to 0.011) includes zero; abstract, results and conclusion now say "not significantly different". |
+| "neither unusually easy nor hard"; "did not carry the result" | The primary refit is at the top of the split range; two basin folds fall below every random split; gain over persistence 0.119-0.136 (splits) vs 0.094-0.186 (basins). |
+| "less than 0.005" (false) | "at most 0.0051 (removing rainfall raised it)". |
+| "an onset is announced by the weather" | Removed; the no-flow variant is less precise (0.239) and onset counts reward frequent alarms. |
+| Leakage overread | "a temporal split matters at least as much" replaced by a note that the test sets differ. |
+| Regulation selective | Reservoir index added (rho 0.20, p = 0.23); attribute tests not corrected for multiple comparisons. |
+| Bootstrap too narrow | Limitation added (gauges share storms; per-year BA range). |
+| "single use of the test set" | Later test-set diagnostics are marked post hoc. |
+| Section "Robustness" (banned stem), seed text, run-ups, keywords, Brier DOI | Renamed "Sensitivity to Split and Level"; seeds corrected; prose edited by hand; keywords alphabetical; DOI added. |
+| 7 pages | Position table, gain-importance figure, catchment figure, lead-day table and deployment figure folded into the text (their numbers stay). |
+
+Build: 6 pages (blind and camera), 18 references, no overfull boxes. Old PDFs in `_before_P4_revision2_2026-10-14/`.
+
 ---
 
 ## Our own score estimate (not a real review)

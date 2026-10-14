@@ -43,8 +43,8 @@ Inside each `pdf_and_tex/`:
 |---|---|
 | P1 | Fourth round done (`latest_14_oct/`): size test with 150 instances at 15 to 27 qubits added from stored results. The varied-disruption run (`exp_p1_r4.py dis`) still needs the main repository. |
 | P2 | Second round done; PDFs are final for that round. The third round was stopped part way, so `P2_Agentic_AI/code/paper.tex` is half edited. `paper_before_r3.tex.bak` is the version that matches the PDFs. |
-| P3 | Second round PDFs in `latest_14_oct/`. |
-| P4 | Second round open (basin folds still to run). |
+| P3 | Third round done (14 Oct), 6 pages. |
+| P4 | Second round done (14 Oct): built from stored results, 6 pages. |
 | P5 | Must be rebuilt after P3 and P4; the build currently fails on a missing P3 macro (`RaTimeoutFeasible`), and its P1 summary needs the new caveat on oracle angle selection. |
 
 The reviewer comments and what was changed for each are in `latest_14_oct/IEEE_reviewer_response.md`.

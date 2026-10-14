@@ -15,7 +15,8 @@ def f3(x):
 
 def extend(put, work, out, root, j):
     r = json.loads((work / "p4_r2.json").read_text(encoding="utf-8"))
-    ev = json.loads((root / "models" / "flood_evaluation_v4.json").read_text(encoding="utf-8"))
+    evf = root / "models" / "flood_evaluation_v4.json"
+    ev = json.loads((evf if evf.exists() else work / "flood_evaluation_v4.json").read_text(encoding="utf-8"))
     M, b = r["methods"], j["bootstrap"]
     # ---- main table: overall and onset rows, every method on the same test rows
     lab = {"xgboost": "XGBoost (ours)", "lstm_sim": "LSTM sim.$^\\dagger$", "trend": "Trend rule",
@@ -47,6 +48,7 @@ def extend(put, work, out, root, j):
     put("LstmDiffHi", f3(L["diff_ci"][1]))
     put("LstmDiffOnLo", f3(L["diff_onset_ci"][0]))
     put("LstmDiffOnHi", f3(L["diff_onset_ci"][1]))
+    assert L["diff_onset_ci"][0] < 0 < L["diff_onset_ci"][1], "text: onset difference to the LSTM not significant"
     put("LstmAlarm", f"{1000 * L['lstm_alarm_rate']:.0f}")
     put("MatchPrec", f3(L["xgb_matched"]["precision"]))
     put("MatchRec", f3(L["xgb_matched"]["recall"]))
@@ -59,6 +61,7 @@ def extend(put, work, out, root, j):
     g = r["gauges"]
     put("UnseenNoRows", str(len(g["unseen_without_test_rows"])))
     put("SeenTestGauges", str(g["seen_with_test_rows"]))
+    put("NUnseenGauges", str(g["unseen"]))
     assert g["unseen"] == 49 and g["unseen_with_test_rows"] == 48 and len(g["unseen_without_test_rows"]) == 1
     assert r["g228"]["n_gauges_total"] == 242, "text: every gauge of this dataset version passes the >30% filter"
 
@@ -91,6 +94,9 @@ def extend(put, work, out, root, j):
     rg = r["regulation"]
     put("RegRho", f"{rg['rho_num_dams']:.2f}")
     put("RegP", f"{rg['p_num_dams']:.2f}")
+    put("RegRhoRes", f"{rg['rho_reservoir_index']:.2f}")
+    put("RegPRes", f"{rg['p_reservoir_index']:.2f}")
+    assert rg["p_reservoir_index"] > 0.05, "text: reservoir index not significant"
     put("RegDams", str(rg["n_with_dams"]))
     put("RegNoDams", str(rg["n_no_dams"]))
     put("RegBADams", f3(rg["ba_with_dams"]))
@@ -131,7 +137,11 @@ def extend(put, work, out, root, j):
         put("SplitPRMax", f3(max(prs)))
         put("SplitOnMin", f3(min(ons)))
         put("SplitOnMax", f3(max(ons)))
-        rob.append(f"{len(sp)} other gauge splits & range & {min(bas):.3f}--{max(bas):.3f} & {min(prs):.3f}--{max(prs):.3f} & "
+        gains = [v["ba"] - v["pers_ba"] for v in sp.values()]
+        put("SplitGainMin", f3(min(gains)))
+        put("SplitGainMax", f3(max(gains)))
+        assert j["ablation"]["all"]["ba"] >= max(bas) - 0.0005, "text: primary refit at the top of the split range"
+        rob.append(f"{len(sp)} gauge splits & range & {min(bas):.3f}--{max(bas):.3f} & {min(prs):.3f}--{max(prs):.3f} & "
                    f"{min(ons):.3f}--{max(ons):.3f}\\\\")
     if "basins" in r and r["basins"]:
         B = r["basins"]
@@ -150,7 +160,14 @@ def extend(put, work, out, root, j):
         put("BasinBAMax", f3(max(v["ba"] for v in B.values())))
         put("BasinPRMin", f3(min(v["pr_auc"] for v in B.values())))
         put("BasinPRMax", f3(max(v["pr_auc"] for v in B.values())))
-    for k, lab_ in (("q99", "99th-percentile level"), ("met_only", "meteorology + season only"),
+        bg = [v["ba"] - v["pers_ba"] for v in B.values()]
+        put("BasinGainMin", f3(min(bg)))
+        put("BasinGainMax", f3(max(bg)))
+        put("BasinPersMin", f3(min(v["pers_ba"] for v in B.values())))
+        put("BasinPersMax", f3(max(v["pers_ba"] for v in B.values())))
+        put("BasinBelowSplits", str(sum(v["ba"] < min(bas) for v in B.values())))
+        assert sum(v["ba"] < min(bas) for v in B.values()) >= 1, "text: some basin folds below every random split"
+    for k, lab_ in (("q99", "99th pct.\\ level"), ("met_only", "met.\\ + season only"),
                     ("no_class_weight", "no class weight")):
         if k in R:
             v = R[k]
@@ -168,9 +185,16 @@ def extend(put, work, out, root, j):
     if "no_class_weight" in R:
         put("NcwEce", f3(R["no_class_weight"]["ece_raw"]))
         put("NcwBA", f3(R["no_class_weight"]["ba"]))
-        if R["no_class_weight"]["ece_raw"] < 0.5 * j["calibration"]["ece_raw"]:
-            put("NcwText", (f"Refit without the positive-class weight, the model's raw ECE was "
-                            f"{R['no_class_weight']['ece_raw']:.3f}, so the weighting explains most of the over-confidence."))
+        nc = R["no_class_weight"]
+        if nc["ece_raw"] < 0.5 * j["calibration"]["ece_raw"]:
+            assert nc["ba"] >= j["ablation"]["all"]["ba"] and nc["onset_ba"] >= j["ablation"]["all"]["onset"]["ba"], \
+                "text: the class weight bought no skill"
+            put("NcwText", (f"A refit without the positive-class weight, run after the test results were known, had a raw "
+                            f"ECE of {nc['ece_raw']:.3f} at a balanced accuracy of {nc['ba']:.3f} (onset "
+                            f"{nc['onset_ba']:.3f}), against {j['ablation']['all']['ba']:.3f} and "
+                            f"{j['ablation']['all']['onset']['ba']:.3f} for the same sample with the weight. The weighting "
+                            f"therefore caused most of the over-confidence and bought no skill; the monsoon gap in ECE "
+                            f"reflects where the high scores fall."))
         else:
             put("NcwText", (f"Refit without the positive-class weight, the raw ECE was still "
                             f"{R['no_class_weight']['ece_raw']:.3f}, so the weighting does not explain the over-confidence."))

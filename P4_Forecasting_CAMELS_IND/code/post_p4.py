@@ -19,6 +19,8 @@ ROOT = HERE.parents[4]
 WORK, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 j = json.loads((WORK / "p4.json").read_text(encoding="utf-8"))
 _meta_file = ROOT / "models" / "flood_model_metadata_v4.json"
+if not _meta_file.exists():  # standalone copy: the results snapshot holds a copy of the file
+    _meta_file = WORK / "flood_model_metadata_v4.json"
 if _meta_file.exists():
     meta, META_FALLBACK = json.loads(_meta_file.read_text(encoding="utf-8")), None
 else:  # standalone copy: values from the delivered nums.tex (p4_meta_macros.json)
@@ -167,7 +169,7 @@ lt += (f" PR-AUC ranged from {L[worst]['pr_auc']:.3f} ({PL[worst].lower()}) to {
        f"({PL[best].lower()}).")
 if L["time"]["pr_auc"] < L["space"]["pr_auc"]:
     lt += (f" Holding out later years lowered PR-AUC more than holding out gauges ({L['time']['pr_auc']:.3f} against "
-           f"{L['space']['pr_auc']:.3f}), so a temporal split matters at least as much as a spatial one. In the "
+           f"{L['space']['pr_auc']:.3f}), although these are different test sets with different flood rates. In the "
            f"spatial protocol, the test years are also the years from which each gauge's flood threshold was "
            f"computed.")
 assert gap_pr > gap_ba, "text: PR-AUC inflated more than balanced accuracy"
@@ -356,6 +358,11 @@ assert all(drops[k] < 0.5 * drops["no_flow"] for k in drops if k != "no_flow"), 
 put("OnsetAll", f3(a["all"]["onset"]["ba"]))
 put("OnsetNoFlow", f3(a["no_flow"]["onset"]["ba"]))
 put("OnsetFlowOnly", f3(a["flow_only"]["onset"]["ba"]))
+single = {k: a[k]["onset"]["ba"] - a["all"]["onset"]["ba"] for k in ("no_rain", "no_soil", "no_static")}
+put("AblOnMaxDelta", f"{max(abs(v) for v in single.values()):.4f}")
+assert single["no_rain"] > 0, "text: removing rainfall raised onset balanced accuracy"
+put("NoFlowPrec", f3(a["no_flow"]["precision"]))
+assert a["no_flow"]["precision"] < a["all"]["precision"], "text: no-flow variant is less precise"
 od_noflow = a["all"]["onset"]["ba"] - a["no_flow"]["onset"]["ba"]
 od_flowonly = a["all"]["onset"]["ba"] - a["flow_only"]["onset"]["ba"]
 assert od_noflow < 0.25 * drops["no_flow"] and od_flowonly > 3 * od_noflow, \
