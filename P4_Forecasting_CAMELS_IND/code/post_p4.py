@@ -18,7 +18,12 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[4]
 WORK, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 j = json.loads((WORK / "p4.json").read_text(encoding="utf-8"))
-meta = json.loads((ROOT / "models" / "flood_model_metadata_v4.json").read_text(encoding="utf-8"))
+_meta_file = ROOT / "models" / "flood_model_metadata_v4.json"
+if _meta_file.exists():
+    meta, META_FALLBACK = json.loads(_meta_file.read_text(encoding="utf-8")), None
+else:  # standalone copy: values from the delivered nums.tex (p4_meta_macros.json)
+    META_FALLBACK = json.loads((WORK / "p4_meta_macros.json").read_text(encoding="utf-8"))["macros"]
+    meta = {"decision_threshold": float(META_FALLBACK["Thr"])}
 M = {}
 
 
@@ -28,23 +33,32 @@ def put(k, v):
 
 m, b, a = j["methods"], j["bootstrap"], j["ablation"]
 f3 = lambda x: f"{x:.3f}"
-put("NTrainGauges", str(meta["gauges_used"] - len(meta["unseen_gauges"])))
+if META_FALLBACK:
+    for _k in ("NTrainGauges", "NGauges", "NTrainRows", "NValRows", "NFeat", "Thr"):
+        put(_k, META_FALLBACK[_k])
+else:
+    put("NTrainGauges", str(meta["gauges_used"] - len(meta["unseen_gauges"])))
+    put("NGauges", str(meta["gauges_used"]))
 put("NTestGauges", str(j["n_test_gauges"]))
-put("NGauges", str(meta["gauges_used"]))
 # fit time per ablation model, read from the experiment log (wall clock, laptop CPU, 4 threads)
 import re  # noqa: E402
 
-tl = [int(x) for x in re.findall(r"\[\s*(\d+)s\] (?:baselines done|ablation)", (WORK / "p4.log").read_text(encoding="utf-8"))]
-assert len(tl) == 7, "log has the baseline line and six ablation lines"
-put("AblMinutes", f"{np.median(np.diff(tl)) / 60:.1f}")
-assert len(meta["unseen_gauges"]) == 49
-assert meta["gauges_skipped"] == [] and meta["gauges_used"] == 242, "text: all 242 gauges in the file are used"
-put("NTrainRows", f"{meta['n_train_available']:,}")
-put("NValRows", f"{meta['n_val']:,}")
+if (WORK / "p4.log").exists():
+    tl = [int(x) for x in re.findall(r"\[\s*(\d+)s\] (?:baselines done|ablation)", (WORK / "p4.log").read_text(encoding="utf-8"))]
+    assert len(tl) == 7, "log has the baseline line and six ablation lines"
+    put("AblMinutes", f"{np.median(np.diff(tl)) / 60:.1f}")
+else:  # experiment log not in this copy: stored value
+    put("AblMinutes", json.loads((WORK / "p4_meta_macros.json").read_text(encoding="utf-8"))["macros"]["AblMinutes"])
+if not META_FALLBACK:
+    assert len(meta["unseen_gauges"]) == 49
+    assert meta["gauges_skipped"] == [] and meta["gauges_used"] == 242, "text: all 242 gauges in the file are used"
+    put("NTrainRows", f"{meta['n_train_available']:,}")
+    put("NValRows", f"{meta['n_val']:,}")
 put("NTestRows", f"{j['n_test']:,}")
 put("PosRate", f"{100 * j['pos_rate']:.1f}")
-put("NFeat", str(len(meta["features"])))
-put("Thr", f"{meta['decision_threshold']:.2f}")
+if not META_FALLBACK:
+    put("NFeat", str(len(meta["features"])))
+    put("Thr", f"{meta['decision_threshold']:.2f}")
 for k, v in j["groups"].items():
     put("Group" + k.capitalize(), str(v))
 for key, tag in (("xgboost", "Xgb"), ("persistence", "Pers"), ("climatology", "Clim"), ("lstm_sim", "Lstm"),

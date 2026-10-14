@@ -1,0 +1,12 @@
+{
+ "note": "Macros that post_p4.py computes from the main repository's models/flood_model_metadata_v4.json and the experiment log p4.log, copied verbatim from the delivered P4 nums.tex (14 Oct 2026). Used only when those files are not present.",
+ "macros": {
+  "NTrainGauges": "193",
+  "NGauges": "242",
+  "NTrainRows": "1,641,197",
+  "NValRows": "349,645",
+  "NFeat": "50",
+  "Thr": "0.45",
+  "AblMinutes": "3.4"
+ }
+}
