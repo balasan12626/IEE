@@ -13,8 +13,8 @@ from scipy.stats import binomtest, wilcoxon
 from post_p1_r3 import holm, s32  # noqa: E402
 from post_p1_v2 import sci  # noqa: E402
 
-PAT = (("roads", "Two roads closed", "Roads"), ("shelter", "Shelter failed", "Shelter"),
-       ("cut", "Seats cut 70\\%", "Cut"))
+PAT = (("roads", "2 roads", "Roads"), ("shelter", "Shelter out", "Shelter"),
+       ("cut", "Seats $-70\\%$", "Cut"))
 RULES = (("popt", "O"), ("energy", "E"), ("cvar", "C"))
 
 
@@ -44,7 +44,7 @@ def extend(put, work, out):
         put(f"Ds{tg}Bind", str(x["bind"]))
         put(f"Ds{tg}Trained", f"{t.mean():.3f}")
         put(f"Ds{tg}TrainedSucc", f"{s32(t):.1f}")
-        cells = [label, str(len(t)), f"{t.mean():.3f}"]
+        cells = [label, f"{t.mean():.3f}"]
         for rule, rt in RULES:
             f = x[rule]
             p = adj[(pat, rule)]
@@ -73,5 +73,10 @@ def extend(put, work, out):
     put("DsAllTrained", f"{T.mean():.3f}")
     put("DsAllTrainedSucc", f"{s32(T):.1f}")
     put("DsCities", str(len(cities)))
+    assert all(not (R[k]["f"].mean() > R[k]["t"].mean() and R[k]["p"] < 0.05) for k in R if k[0] != "all"), \
+        "text: no fixed set raised P_opt significantly under any pattern"
+    assert R[("shelter", "popt")]["p"] < 0.05 and R[("shelter", "popt")]["f"].mean() < R[("shelter", "popt")]["t"].mean()
+    assert R[("roads", "energy")]["p"] < 0.05 and R[("roads", "energy")]["f"].mean() < R[("roads", "energy")]["t"].mean()
+    assert all(s32(R[("all", r)]["f"]) > s32(R[("all", r)]["t"]) for r, _ in RULES), "text: success@32 rose pooled"
     (out / "tab_dis.tex").write_text("\n".join(lines), encoding="utf-8")
     return R, adj

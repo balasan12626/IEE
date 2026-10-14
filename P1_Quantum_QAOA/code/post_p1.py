@@ -311,6 +311,11 @@ R4 = post_p1_r4.extend(put, WORK, OUT)
 import post_p1_r5  # noqa: E402  fifth revision: exact (minimal-set) capacity penalty and HiGHS on the city instances
 
 post_p1_r5.extend(put, WORK, OUT)
+import post_p1_r6  # noqa: E402  sixth revision: other disruption patterns on the city networks
+import post_p1_r7  # noqa: E402  seventh revision: angle selection without optima, leave one city out
+
+R6 = post_p1_r6.extend(put, WORK, OUT)
+R7 = post_p1_r7.extend(put, WORK)
 
 with open(OUT / "nums.tex", "w", encoding="utf-8") as f:
     for k, v in M.items():

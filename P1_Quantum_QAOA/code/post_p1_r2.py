@@ -60,6 +60,7 @@ def extend(put, work, out):
     fgp = {p: np.array([fg[i][p]["popt"] for i in ids]) for p in (1, 2, 3, 4)}
     xyp = {p: np.array([xy[i][p]["popt"] for i in ids]) for p in (1, 2, 3, 4)}
     put("FgFour", f"{fgp[4].mean():.3f}")
+    put("FgOverXYZero", f"{fgp[4].mean() / xyp[4].mean():.1f}")
     put("FgOne", f"{fgp[1].mean():.3f}")
     put("FgWinsFour", str(int((fgp[4] > xyp[4]).sum())))
     put("FgPFour", sci(wilcoxon(fgp[4], xyp[4]).pvalue))
