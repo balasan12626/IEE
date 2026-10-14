@@ -168,10 +168,7 @@ else:
     put("DeadlineN", str(len(slow)))
     put("MilpSlowS", f"{max(r['milp_ms'] for r in C) / 1000:.1f}")
     assert slow and all(r["feasible"] for r in slow), "text: every instance slower than the deadline had a plan"
-    to_txt = (f"No solve reached the {M['CityLimitS']}~s limit; the slowest took {M['MilpSlowS']}~s. A {DL}~s deadline, "
-              f"short enough to re-plan within one radio cycle, would have stopped {len(slow)} instances with neither "
-              f"a plan nor a proof, and every one of them had a valid plan. A time-out must therefore be reported as "
-              f"unknown, never as infeasible.")
+    to_txt = ""
 put("CityText", (
     f"As the problem grew from {Gs[0]} to {Gs[-1]} groups, simulated annealing produced a valid plan in "
     f"{M['CitySAFoundEight']}\\% and then {M['CitySAFoundThirtyTwo']}\\% of calls on solvable instances; Section~\\ref{{sec:viol}} shows that "
@@ -181,9 +178,9 @@ put("CityText", (
     f"instances had a valid plan. "
     f"The uncertified loop escalated {M['CityFalseEsc']}\\% of solvable cases overall ({M['CityFalseTight']}\\% at 90\\% "
     f"demand, {M['CityFalseLoose']}\\% at 60\\%), because the greedy rule also fails when capacity is tight. Where the "
-    f"greedy rule did find a plan, its median cost was {M['CityGreedyGap']}\\% above the optimum. Within the "
-    f"{M['CityLimitS']}~s limit the MILP settled {M['CitySettled']} of the {M['CityN']} instances, finding the optimal plan "
-    f"or proving that none exists, in at most {M['MilpMaxS']}~s. " + to_txt))
+    f"greedy rule did find a plan, its median cost was {M['CityGreedyGap']}\\% above the optimum. The MILP settled "
+    f"{M['CitySettled']} of the {M['CityN']} instances, finding the optimal plan or proving that none exists; the slowest "
+    f"took {M['MilpMaxS']}~s, well inside the {M['CityLimitS']}~s limit. " + to_txt))
 
 # ---------------- shot budget
 ad = [x for r in T for k in ("qaoa_adaptive", "sa_adaptive") for x in r["draws"][k]]
@@ -209,7 +206,9 @@ assert tw["qaoa_fixed"]["opt"] - tw["qaoa_adaptive"]["opt"] > 10, "text: QAOA lo
 assert abs(tw["sa_fixed"]["opt"] - tw["sa_adaptive"]["opt"]) < 1, "text: annealing does not"
 assert tw["sa_fixed"]["opt"] == tw["sa_fixed"]["valid"] == tw["sa_adaptive"]["opt"], "text: every valid SA sample optimal"
 assert float(M["CityAdaptShots"]) > float(M["AdaptShots"]), "text: adaptive rule saves less at city scale than on the twin"
-assert np.ceil(np.log(0.01) / np.log(1 - 0.05)) == 90, "text: q=0.05, eps=0.01 needs 90 shots"
+put("ShotQ", "0.05")
+put("ShotEps", "0.01")
+put("ShotNeed", f"{np.ceil(np.log(0.01) / np.log(1 - 0.05)):.0f}")
 put("ShotText", (
     f"With the adaptive budget the twin loop used {M['AdaptShots']} shots per event on average instead of {cfg['shots']} "
     f"and took the same escalation decision in every draw. Plan quality did change for QAOA: it dispatched an optimal plan in "
@@ -217,7 +216,7 @@ put("ShotText", (
     f"cheapest valid sample of the first successful batch rather than of all {cfg['shots']} shots. Annealing dispatched an "
     f"optimal plan whenever it found a valid one, with either budget, so its rate stayed at {M['AdaptOptSA']}\\%. At city scale "
     f"the adaptive rule used {M['CityAdaptShots']} shots per call, more than on the twin, because valid samples are rarer there."))
-assert 90 > cfg["shots"]
+assert int(M["ShotNeed"]) > cfg["shots"]
 assert float(M["AdaptShots"]) < cfg["shots"], "text: adaptive budget uses fewer shots"
 
 # ---------------- twin results by event
@@ -388,7 +387,7 @@ put("StatText", (
     f"Resampling events gives 95\\% intervals of {M['TwinRawQLo']}--{M['TwinRawQHi']}\\% for QAOA and "
     f"{M['TwinRawSALo']}--{M['TwinRawSAHi']}\\% for annealing. On the {M['PairN']} solvable events, the top QAOA sample "
     f"was unsafe more often than the top annealing sample in {M['PairQWorse']} events and less often in "
-    f"{M['PairSAWorse']} (Wilcoxon signed-rank $p={M['PairP']}$), so the difference is consistent across events and not an effect of a few draws."))
+    f"{M['PairSAWorse']} (Wilcoxon signed-rank $p={M['PairP']}$), so the difference holds across events."))
 
 # ---------------- city results by city
 RE = CITY2["reach"] if CITY2 else json.loads((WORK / "p3_reach.json").read_text(encoding="utf-8"))
@@ -432,6 +431,10 @@ if (WORK / "p3_r3.json").exists() and CITY2:
     import post_p3_r3  # noqa: E402  third revision: one-hot-preserving annealer in the same loop
 
     post_p3_r3.extend(put, WORK, CITY2)
+if (WORK / "p3_r4.json").exists():
+    import post_p3_r4  # noqa: E402  fourth revision: infeasibility classes, one-hot failure classes, penalty sweep
+
+    post_p3_r4.extend(put, WORK)
 
 # ---------------- figure
 plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman"], "font.size": 8,

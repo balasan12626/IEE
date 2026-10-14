@@ -172,6 +172,20 @@ An internal reviewer (scored 2.9 / 5) found the problems below. All numbers come
 
 Build: 6 pages (blind and camera), 21 references, no overfull boxes, blind copy anonymous. Old PDFs in `_before_P3_revision3_2026-10-14/`.
 
+### P3 round 4 (14 Oct 2026, after a fresh strict internal review scored 3.0)
+
+New city-only experiments (no twin backend needed; numbers asserted in `post_p3_r2.py`, `post_p3_r3.py`, `post_p3_r4.py`):
+
+| Item | Result |
+|---|---|
+| Loop calls the MILP last although results favour it first | Offline replay of a solver-first loop with a deadline and the sampler/greedy as fallback: optimal plans 74.3 / 82.5 / 91.4 / 97.3% for 0.5 / 1 / 2 / 5 s, against 37.0% sampler-first; uncertified escalations of solvable cases at most 0.78%. In the abstract and Section V-D. |
+| Is the annealer mis-tuned? (`exp_p3_r4.py`, 108 instances) | Penalty weight x0.25 to x4 and a cost-scaled temperature: valid rate 71.1-78.9 / 33.1-39.3 / 13.3% at 8 / 16 / 32 groups; no setting changed it at 32 groups. |
+| One-hot annealer's failures (`exp_p3_r3.py`, `exp_p3_r4.py`) | Valid plans more often (41 instances better, 4 worse), but 77% of its unsafe top samples are penalty-free overloads and 23% forbidden pairs: the encoding's blind spot limits it. |
+| Value of the certificate | Of 103 infeasible city instances, 53 have a group with no allowed shelter; 50 have no trivial cause, so only the MILP shows that no plan exists. |
+| Text items | Typed "90 shots" now a macro; one set of twin timings; mixed denominators stated; Table notes; repeated sentences cut; unsupported "radio cycle" removed; hedge on novelty; staged phrasing rewritten; trace table folded into text. |
+
+Build: 6 pages, abstract 248 words, no overfull boxes.
+
 ## Paper 4: round 2 finished (14 Oct 2026, internal review, no new experiments)
 
 The round-2 source was never built into a PDF (the old PDF of 10 Oct had the round-1 text). It is now built from stored results; `models/flood_evaluation_v4.json` and `flood_model_metadata_v4.json` (from the main repository) are copied into the results snapshot. The basin folds are already in `p4_r2.json`. An internal reviewer scored the round-2 text 3.0 / 5; changes, each asserted in `post_p4.py` / `post_p4_r2.py`:

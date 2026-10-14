@@ -28,7 +28,7 @@
 \newcommand{\DeadlineS}{5}
 \newcommand{\DeadlineN}{7}
 \newcommand{\MilpSlowS}{40.8}
-\newcommand{\CityText}{As the problem grew from 8 to 32 groups, simulated annealing produced a valid plan in 71.3\% and then 17.0\% of calls on solvable instances; Section~\ref{sec:viol} shows that at this scale most samples were not even complete assignments. Dispatching the top sample unchecked would have been unsafe in most calls at every size. With 8 groups at 90\% demand each group is about as large as the free seats of an average shelter, and only 9 of 60 instances had a valid plan. The uncertified loop escalated 4.4\% of solvable cases overall (11.1\% at 90\% demand, 0.0\% at 60\%), because the greedy rule also fails when capacity is tight. Where the greedy rule did find a plan, its median cost was 7.6\% above the optimum. Within the 60~s limit the MILP settled 360 of the 360 instances, finding the optimal plan or proving that none exists, in at most 40.8~s. No solve reached the 60~s limit; the slowest took 40.8~s. A 5~s deadline, short enough to re-plan within one radio cycle, would have stopped 7 instances with neither a plan nor a proof, and every one of them had a valid plan. A time-out must therefore be reported as unknown, never as infeasible.}
+\newcommand{\CityText}{As the problem grew from 8 to 32 groups, simulated annealing produced a valid plan in 71.3\% and then 17.0\% of calls on solvable instances; Section~\ref{sec:viol} shows that at this scale most samples were not even complete assignments. Dispatching the top sample unchecked would have been unsafe in most calls at every size. With 8 groups at 90\% demand each group is about as large as the free seats of an average shelter, and only 9 of 60 instances had a valid plan. The uncertified loop escalated 4.4\% of solvable cases overall (11.1\% at 90\% demand, 0.0\% at 60\%), because the greedy rule also fails when capacity is tight. Where the greedy rule did find a plan, its median cost was 7.6\% above the optimum. The MILP settled 360 of the 360 instances, finding the optimal plan or proving that none exists; the slowest took 40.8~s, well inside the 60~s limit. }
 \newcommand{\AdaptShots}{18.4}
 \newcommand{\AdaptSame}{100.0}
 \newcommand{\AdaptOptQ}{68.8}
@@ -36,6 +36,9 @@
 \newcommand{\AdaptOptSA}{95.4}
 \newcommand{\FixedOptSA}{95.4}
 \newcommand{\CityAdaptShots}{50.0}
+\newcommand{\ShotQ}{0.05}
+\newcommand{\ShotEps}{0.01}
+\newcommand{\ShotNeed}{90}
 \newcommand{\ShotText}{With the adaptive budget the twin loop used 18.4 shots per event on average instead of 64 and took the same escalation decision in every draw. Plan quality did change for QAOA: it dispatched an optimal plan in 68.8\% of feasible draws against 93.1\% with the full budget, because the loop keeps the cheapest valid sample of the first successful batch rather than of all 64 shots. Annealing dispatched an optimal plan whenever it found a valid one, with either budget, so its rate stayed at 95.4\%. At city scale the adaptive rule used 50.0 shots per call, more than on the twin, because valid samples are rarer there.}
 \newcommand{\TwinRawFeasQ}{16.6}
 \newcommand{\TwinRawFeasSA}{6.5}
@@ -66,7 +69,7 @@
 \newcommand{\PairP}{2.4\times10^{-4}}
 \newcommand{\CityFalseLo}{2.3}
 \newcommand{\CityFalseHi}{6.9}
-\newcommand{\StatText}{Resampling events gives 95\% intervals of 22.7--35.6\% for QAOA and 14.3--26.4\% for annealing. On the 153 solvable events, the top QAOA sample was unsafe more often than the top annealing sample in 24 events and less often in 7 (Wilcoxon signed-rank $p=2.4\times10^{-4}$), so the difference is consistent across events and not an effect of a few draws.}
+\newcommand{\StatText}{Resampling events gives 95\% intervals of 22.7--35.6\% for QAOA and 14.3--26.4\% for annealing. On the 153 solvable events, the top QAOA sample was unsafe more often than the top annealing sample in 24 events and less often in 7 (Wilcoxon signed-rank $p=2.4\times10^{-4}$), so the difference holds across events.}
 \newcommand{\KolFeas}{5}
 \newcommand{\WorstCity}{Chennai}
 \newcommand{\WorstFalse}{8.0}
@@ -100,7 +103,7 @@
 \newcommand{\ExSlowPct}{20}
 \newcommand{\ExSlowFound}{1}
 \newcommand{\ExSlowN}{39}
-\newcommand{\ExactFirstText}{We next compare sampler-first and solver-first loops. In a separate timing run on the twin the MILP took a median 5.1~ms per event, one annealing call of 64 chains 32~ms and one QAOA training 9.3~s of simulation. At city scale one annealing call took a median 0.32, 0.84 and 1.94~s at 8, 16 and 32 groups, against 0.01, 0.08 and 0.32~s for the MILP. The MILP was slower than one annealing call on 39 solved instances (20\% of those with 32 groups), and the annealer found a valid plan on 1 of them. An exact-solver-first loop would therefore have been faster in median time and optimal, whereas the verified loop fell back to the greedy plan whenever the sampler failed, at a median \CityGreedyGap\% above the optimum at city scale.}
+\newcommand{\ExactFirstText}{We next compare sampler-first and solver-first loops. On the twin the MILP took a median \TwinMilpMs~ms per event and one QAOA training \TwinQaoaS~s (Section~\ref{sec:twin}); one annealing call of 64 chains, timed separately, took 32~ms. At city scale one annealing call took a median 0.32, 0.84 and 1.94~s at 8, 16 and 32 groups, against 0.01, 0.08 and 0.32~s for the MILP. The MILP was slower than one annealing call on 39 of the solved instances, including 20\% of the solved 32-group instances, and the annealer found a valid plan on 1 of these 39. An exact-solver-first loop would therefore have been faster in median time and optimal, whereas the verified loop fell back to the greedy plan whenever the sampler failed, at a median \CityGreedyGap\% above the optimum at city scale.}
 \newcommand{\StrongValidEight}{70.2}
 \newcommand{\WeakValidEight}{71.3}
 \newcommand{\StrongSaSEight}{3.8}
@@ -114,7 +117,7 @@
 \newcommand{\StrongFalseEsc}{5.1}
 \newcommand{\StrongBetter}{1}
 \newcommand{\StrongWorse}{5}
-\newcommand{\StrongText}{More search did not help. On 108 city instances (three per city, size and demand) an annealer with 400 instead of 40 sweeps found a valid plan in 70.2, 35.6 and 13.3\% of calls on solvable instances at 8, 16 and 32 groups, against 74.2, 38.6 and 13.3\% with 40 sweeps on the same instances; per instance it did better on 1 and worse on 5, at 3.8, 9.1 and 21.2~s per call. The limit is the encoding and its penalty weight, not the length of the search.}
+\newcommand{\StrongText}{On 108 city instances (three per city, size and demand) an annealer with 400 instead of 40 sweeps found a valid plan in 70.2, 35.6 and 13.3\% of calls on solvable instances at 8, 16 and 32 groups, against 74.2, 38.6 and 13.3\% with 40 sweeps on the same instances; per instance it did better on 1 and worse on 5, at 3.8, 9.1 and 21.2~s per call. Longer annealing did not raise the valid rate.}
 \newcommand{\LoopDraws}{2,570}
 \newcommand{\LoopOpt}{37.0}
 \newcommand{\LoopGapMed}{4.4}
@@ -128,6 +131,14 @@
 \newcommand{\DlFive}{7}
 \newcommand{\DlTen}{2}
 \newcommand{\DlThirty}{1}
+\newcommand{\DfOptHalf}{74.3}
+\newcommand{\DfUncHalf}{0.78}
+\newcommand{\DfOptOne}{82.5}
+\newcommand{\DfUncOne}{0.78}
+\newcommand{\DfOptTwo}{91.4}
+\newcommand{\DfUncTwo}{0.39}
+\newcommand{\DfOptFive}{97.3}
+\newcommand{\DfUncFive}{0.00}
 \newcommand{\OhValidEight}{85.2}
 \newcommand{\OhValidOldEight}{71.3}
 \newcommand{\OhUnsafeEight}{70.8}
@@ -150,5 +161,17 @@
 \newcommand{\OhWorse}{4}
 \newcommand{\OhP}{9.0\times10^{-7}}
 \newcommand{\OhDraws}{3,600}
+\newcommand{\InfN}{103}
+\newcommand{\InfEmpty}{53}
+\newcommand{\InfComb}{50}
+\newcommand{\OhClsBlind}{77}
+\newcommand{\OhClsForb}{23}
+\newcommand{\SwMinEight}{71.1}
+\newcommand{\SwMaxEight}{78.9}
+\newcommand{\SwMinSixteen}{33.1}
+\newcommand{\SwMaxSixteen}{39.3}
+\newcommand{\SwMinThirtyTwo}{13.3}
+\newcommand{\SwMaxThirtyTwo}{13.3}
+\newcommand{\SwN}{108}
 \newcommand{\MilpMedEight}{0.01}
 \newcommand{\MilpMedThirtyTwo}{0.32}

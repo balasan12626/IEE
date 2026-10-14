@@ -100,13 +100,14 @@ def extend(put, work, out, T, C, city2=None):
     put("ExSlowFound", str(slow_found))
     put("ExSlowN", str(len(slow)))
     put("ExactFirstText", (
-        f"We next compare sampler-first and solver-first loops. In a separate timing run on the twin the MILP took a median {milp_tw:.1f}~ms per event, one "
-        f"annealing call of 64 chains {sa_tw:.0f}~ms and one QAOA training {qtrain:.1f}~s of simulation. At city scale "
+        f"We next compare sampler-first and solver-first loops. On the twin the MILP took a median \\TwinMilpMs~ms per "
+        f"event and one QAOA training \\TwinQaoaS~s (Section~\\ref{{sec:twin}}); one annealing call of 64 chains, timed "
+        f"separately, took {sa_tw:.0f}~ms. At city scale "
         f"one annealing call took a median {city_sa[8] / 1000:.2f}, {city_sa[16] / 1000:.2f} and {city_sa[32] / 1000:.2f}~s "
         f"at 8, 16 and 32 groups, against {city_milp[8] / 1000:.2f}, {city_milp[16] / 1000:.2f} and "
-        f"{city_milp[32] / 1000:.2f}~s for the MILP. The MILP was slower than one annealing call on {len(slow)} solved "
-        f"instances ({100 * len(slow32) / n32:.0f}\\% of those with 32 groups), and the annealer found a valid plan on "
-        f"{slow_found} of them. An exact-solver-first loop would therefore have been faster in median time and optimal, "
+        f"{city_milp[32] / 1000:.2f}~s for the MILP. The MILP was slower than one annealing call on {len(slow)} of the solved "
+        f"instances, including {100 * len(slow32) / n32:.0f}\\% of the solved 32-group instances, and the annealer found a "
+        f"valid plan on {slow_found} of these {len(slow)}. An exact-solver-first loop would therefore have been faster in median time and optimal, "
         f"whereas the verified loop fell back to the greedy plan whenever the sampler failed, at a median "
         f"\\CityGreedyGap\\% above the optimum at city scale."))
 
@@ -142,12 +143,11 @@ def extend(put, work, out, T, C, city2=None):
         put("StrongBetter", str(better))
         put("StrongWorse", str(worse))
         put("StrongText", (
-            f"More search did not help. On {len(sk)} city instances (three per city, size and demand) an annealer "
+            f"On {len(sk)} city instances (three per city, size and demand) an annealer "
             f"with 400 instead of 40 sweeps found a valid plan in {sv[8]:.1f}, {sv[16]:.1f} and {sv[32]:.1f}\\% of calls "
             f"on solvable instances at 8, 16 and 32 groups, against {wv[8]:.1f}, {wv[16]:.1f} and {wv[32]:.1f}\\% with 40 "
             f"sweeps on the same instances; per instance it did better on {better} and worse on {worse}, at "
-            f"{st[8]:.1f}, {st[16]:.1f} and {st[32]:.1f}~s per call. The limit is the encoding and its penalty weight, "
-            f"not the length of the search."))
+            f"{st[8]:.1f}, {st[16]:.1f} and {st[32]:.1f}~s per call. Longer annealing did not raise the valid rate."))
         assert all(st[G] * 1000 > city_milp[G] for G in (8, 16, 32)), "text: the long annealer is slower than the MILP"
         res["strong"] = (sv, wv, st)
     else:
@@ -172,4 +172,29 @@ def extend(put, work, out, T, C, city2=None):
             put(f"Dl{tg}", str(int((ms > t).sum())))
             assert fe[ms > t].all(), "text: every instance above a deadline had a valid plan"
         assert not any(r["greedy_valid"] and not r["feasible"] for r in allc), "greedy never contradicts the MILP"
+        # solver-first variant: MILP with a deadline, sampler and greedy run alongside as fallback (offline replay)
+        dfo = {}
+        for dl, tg in ((0.5, "Half"), (1, "One"), (2, "Two"), (5, "Five")):
+            opt, unc = [], []
+            for r in allc:
+                within = r["milp_ms"] / 1000 <= dl
+                for x in r["draws"]["fixed"]:
+                    if not r["feasible"]:
+                        continue
+                    if within:
+                        opt.append(1.0)
+                        unc.append(0.0)
+                    elif x["tool"] in ("sampler", "greedy"):
+                        opt.append(float(x["optimal"]))
+                        unc.append(0.0)
+                    else:
+                        opt.append(0.0)
+                        unc.append(1.0)
+            dfo[dl] = (100 * np.mean(opt), 100 * np.mean(unc))
+            put(f"DfOpt{tg}", f"{dfo[dl][0]:.1f}")
+            put(f"DfUnc{tg}", f"{dfo[dl][1]:.2f}")
+        loop_opt = 100 * np.mean([x["optimal"] for x in dr])
+        assert all(dfo[dl][0] > 2 * loop_opt - 1 for dl in (1, 2, 5)), "text: solver-first with 1 s deadline at least doubles optimal plans"
+        assert dfo[0.5][0] < dfo[1][0] < dfo[2][0] < dfo[5][0], "text: more time, more optimal plans"
+        assert max(v[1] for v in dfo.values()) < 1.0, "text: uncertified escalations of solvable cases under 1%"
     return res
