@@ -10,7 +10,7 @@ Snapshot of 14 October 2026.
 |---|---|---|
 | P1 | `P1_Quantum_QAOA/` | One-Hot-Preserving QAOA for Flood Shelter Assignment: Pairwise Capacity Encoding and Angle Transfer |
 | P2 | `P2_Agentic_AI/` | Rules Decide, Language Models Narrate: Fail-Closed Numeric Grounding of LLM Narration in a Flood-Response Pipeline |
-| P3 | Round 5 done (14 Oct): raw-vector re-scoring, real MILP time limits, infeasibility re-check, reference and wording fixes; 6 pages, all checks pass. |
+| P3 | `P3_Runtime_Assurance/` | Runtime Assurance for Sampling-Based Optimizers in Flood Re-Planning: Exact Verification and Certified Escalation |
 | P4 | `P4_Forecasting_CAMELS_IND/` | Forecasting Three-Day High-Flow Exceedance at Gauges Unseen in Space and Time: A Leakage-Controlled Benchmark on CAMELS-IND |
 | P5 | `P5_Merged_FailClosed_Chain/` | Checking Every Proposal: A Fail-Closed Flood Decision-Support Chain from Forecast to Dispatch |
 
