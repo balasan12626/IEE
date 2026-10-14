@@ -77,25 +77,8 @@ All QAOA results are classical simulations; we make no claim of quantum speed-up
 
 \textit{Evacuation planning.} Shelter allocation has long been solved with integer programming \cite{Sherali1991}; modern MILP solvers such as HiGHS \cite{Huangfu2018} make exact solutions cheap at the sizes of a city district. Repairing a plan rather than re-planning from scratch reduces disruption \cite{Fox2006}.
 
-Table~\ref{tab:pos} summarizes the gap. We found no application of runtime assurance to sampling optimizers, and the sampler studies cited here report solution quality per call; none measures what happens when a loop acts on the answer.
+Simplex and shields guard controllers and learned policies, and QUBO studies for disasters report samples without a check; we found no application of runtime assurance to sampling optimizers, and the sampler studies cited here report solution quality per call; none measures what happens when a loop acts on the answer.
 
-\begin{table}[t]
-\caption{Position of this work}
-\label{tab:pos}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{2.4pt}
-\begin{tabular}{llll}
-\toprule
-Work & Unreliable part & Check & Escalation\\
-\midrule
-Simplex, SOTER \cite{Sha2001,Desai2019} & controller & envelope & safe controller\\
-Shielding \cite{Alshiekh2018} & RL policy & automaton & blocked action\\
-QUBO for disasters \cite{Cadelina2024} & annealer & -- & --\\
-This work & sampler & exact verifier & MILP-certified\\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \section{Problem and Loop}
 \subsection{Assignment}
@@ -279,14 +262,14 @@ $G$ & vars & demand & feasible & valid & unsafe & false esc. & MILP\\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig_city.pdf}
+\includegraphics[width=0.9\columnwidth]{fig_city.pdf}
 \caption{City scale: share of calls in which the sampler produced a valid plan, and share of solvable cases an uncertified loop would escalate, against the number of groups.}
 \label{fig:city}
 \end{figure}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig_milp.pdf}
+\includegraphics[width=0.9\columnwidth]{fig_milp.pdf}
 \caption{Cost of the certificate: MILP solve time of every city instance (log scales, sizes jittered). The dotted line marks a \DeadlineS~s deadline; every instance above it had a valid plan.}
 \label{fig:milp}
 \end{figure}
@@ -305,9 +288,9 @@ City & Solvable & Valid & Unsafe & False esc. & Greedy & MILP s\\
  & & sample & & uncert. & found & (median)\\
 \midrule
 Guwahati & 58/60 & 93.1 & 12.7 & 0.0 & 100.0 & 0.01\\
+Chennai & 50/60 & 22.6 & 86.5 & 8.0 & 92.0 & 0.19\\
 Patna & 50/60 & 5.2 & 100.0 & 6.0 & 94.0 & 0.23\\
 Mumbai & 50/60 & 21.6 & 96.7 & 3.8 & 96.0 & 0.15\\
-Chennai & 50/60 & 22.6 & 86.5 & 8.0 & 92.0 & 0.19\\
 Delhi & 44/60 & 30.2 & 85.8 & 3.4 & 95.5 & 0.06\\
 Kolkata & 5/60 & 40.0 & 100.0 & 20.0 & 80.0 & 0.01\\
 \bottomrule
@@ -363,6 +346,8 @@ verified loop (this work) & 0.0 & 0.0 & 0.0 & 0.0 & 0.0\\
 
 \ExactFirstText{} \StrongText{}
 
+\textit{A one-hot annealer.} Most unsafe city samples broke the one-hot rule (Table~\ref{tab:viol}), so we replaced the bit flips with moves that reassign one group, on the same energy, chains, sweeps and seeds, which keeps every sample one-hot. On solvable instances it found a valid plan in \OhValidEight, \OhValidSixteen{} and \OhValidThirtyTwo\% of calls at 8, 16 and 32 groups, against \OhValidOldEight, \OhValidOldSixteen{} and \OhValidOldThirtyTwo\% for bit flips (better on \OhBetter{} instances, worse on \OhWorse, $p=\OhP$). Its top sample was still unsafe in \OhUnsafeEight{} to \OhUnsafeThirtyTwo\% of calls and the uncertified loop's false escalations did not change, so the remaining failures lie in the penalized rules, not in the one-hot rows.
+
 \subsection{Shot Budget}
 \ShotText{} By (\ref{eq:shots}), a sampler with $q=0.05$ needs 90 shots for $\epsilon=0.01$, more than the \Shots{} used here.
 
@@ -379,7 +364,7 @@ The results translate into four rules for anyone wiring a sampler into an operat
 \item Keep the full shot budget when plan quality matters. The adaptive budget never changed an escalation, but it lowered QAOA's rate of optimal plans from \FixedOptQ\% to \AdaptOptQ\%.
 \end{enumerate}
 
-\textit{Threats to validity.} The penalty weight $P$ is set once per instance from the cost range, as in the usual QUBO recipe \cite{Glover2019}, and was not tuned; a larger $P$ changes how often samples break the penalized rules, while the overloads that the pairwise term misses stay invisible at any weight; an exact encoding would remove those misses but not the broken one-hot rows of the city runs. QAOA was trained per event with a fixed budget and simulated without noise at 12 variables, and the city study uses simulated annealing as its only sampler, so we expect a noisy hardware sampler to produce valid samples less often. The draws of one event share its instance, which is why the intervals above resample events and instances rather than draws.
+\textit{Threats to validity.} The penalty weight $P$ is set once per instance from the cost range, as in the usual QUBO recipe \cite{Glover2019}, and was not tuned; a larger $P$ changes how often samples break the penalized rules, while the overloads that the pairwise term misses stay invisible at any weight; an exact encoding would remove those misses, and a one-hot annealer removed the broken rows of the city runs without lowering the unsafe rate. QAOA was trained per event with a fixed budget and simulated without noise at 12 variables, and the city study uses simulated annealing as its only sampler, so we expect a noisy hardware sampler to produce valid samples less often. The draws of one event share its instance, which is why the intervals above resample events and instances rather than draws.
 
 City demand is synthetic, capacities are estimates by building type, and every city instance uses the same kind of disruption: three closed roads and one failed shelter. The MILP is exact, but the slowest 320-variable instance needed \MilpSlowS~s, and regional problems will hit any fixed limit more often. Escalation was tested for infeasibility caused by failures and closures, and no officer took part in the evaluation, so the cost of a false escalation to a real operations room is not measured here.
 

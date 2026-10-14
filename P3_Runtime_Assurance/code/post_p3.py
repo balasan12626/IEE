@@ -428,6 +428,10 @@ put("ByCityText", (
 import post_p3_r2  # noqa: E402
 
 R2 = post_p3_r2.extend(put, WORK, OUT, T, C, CITY2)
+if (WORK / "p3_r3.json").exists() and CITY2:
+    import post_p3_r3  # noqa: E402  third revision: one-hot-preserving annealer in the same loop
+
+    post_p3_r3.extend(put, WORK, CITY2)
 
 # ---------------- figure
 plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman"], "font.size": 8,

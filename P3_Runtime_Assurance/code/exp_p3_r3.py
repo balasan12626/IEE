@@ -117,4 +117,5 @@ if __name__ == "__main__":
             out.append(r)
             if len(out) % 30 == 0:
                 print(f"{len(out)}/{len(jobs)} {time.time() - t0:.0f}s", flush=True)
-    (WORK / "p3_r3.json").write_text(json.dumps({"sweeps": SWEEPS, "rows": out}), encoding="utf-8")
+    conv = lambda o: o.item() if isinstance(o, np.generic) else str(o)  # numpy scalars from run_loop
+    (WORK / "p3_r3.json").write_text(json.dumps({"sweeps": SWEEPS, "rows": out}, default=conv), encoding="utf-8")
