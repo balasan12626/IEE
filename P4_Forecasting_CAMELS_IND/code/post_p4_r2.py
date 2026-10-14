@@ -91,6 +91,8 @@ def extend(put, work, out, root, j):
     small = {y: v for y, v in py.items() if v["n"] <= 5000}
     put("YearsSmallRows", f"{sum(v['n'] for v in small.values()):,}")
     put("YearsSmall", " and ".join(sorted(small)))
+    put("YearsSmallBA", " and ".join(f3(small[y]["ba"]) for y in sorted(small)))
+    assert all(v["ba"] < min(w["ba"] for w in big.values()) for v in small.values()), "text: partial years lower"
     rg = r["regulation"]
     put("RegRho", f"{rg['rho_num_dams']:.2f}")
     put("RegP", f"{rg['p_num_dams']:.2f}")
@@ -206,7 +208,7 @@ def extend(put, work, out, root, j):
     names = {"logistic_regression": "Logistic regression", "random_forest": "Random forest",
              "hist_gradient_boosting": "Hist. gradient boosting", "xgboost_d4": "XGBoost, depth 4",
              "xgboost_d6": "XGBoost, depth 6", "xgboost_d8": "XGBoost, depth 8",
-             "xgboost_d6_full": "XGBoost, depth 6, all rows"}
+             "xgboost_d6_full": "XGBoost, depth 6, selected refit"}
     cand = []
     for k, nm in names.items():
         v = ev["candidates"][k]["validation"]

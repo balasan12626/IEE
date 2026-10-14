@@ -234,6 +234,19 @@ Build: 6 pages (blind and camera), 18 references, no overfull boxes. Old PDFs in
 
 ---
 
+### P4 round 3 (14 Oct 2026, after a strict internal review scored 3.0)
+
+| Comment | Status | Change |
+|---|---|---|
+| "one of these 1 gauges" (wrong macro) | Fixed | Uses the 49 unseen gauges. |
+| Protocol gap called an "inflation" by "the same model" | Fixed | Now "a refit scored on a random row split ... on its own test set"; the discussion says the test sets and flood rates differ, so not all of the gap is leakage. |
+| Per-year skill quoted for full years only | Fixed | Adds the partial years 2019 and 2020 (0.783 and 0.767), asserted lower. |
+| "Above a flow-trend rule" without an interval | Fixed | Dropped from abstract and conclusion. |
+| "Clearly better", "beat climatology", "both needed" | Fixed | Softened to what the numbers support. |
+| "Test once", table label "all rows" | Fixed | "test on"; "selected refit". |
+| Prose items | Fixed | Rewrites from the review. |
+| Not done | Open | Prevalence-normalised PR-AUC, block bootstrap over years, CSI/F1 and Brier skill (needs re-analysis), forecast-rain inputs (new experiment). |
+
 ## Paper 5: rebuilt (14 Oct 2026)
 
 | Item | Status | Change |

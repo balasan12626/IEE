@@ -177,11 +177,12 @@ lt += (f" Flood prevalence differs between protocols ({100 * L['random']['pos_ra
        f"{100 * L['space_time']['pos_rate']:.1f}\% in the held-out test), which moves PR-AUC on its own.")
 put("LeakText", lt)
 if L["random"]["ba_ci"][0] > L["space_time"]["ba_ci"][1]:
-    put("LeakDiscuss", (f"the evaluation protocol alone moved balanced accuracy by {M['LeakGapBA']} points "
-                        f"(Table~\\ref{{tab:leak}}), so scores from random row splits overstate what a forecaster will "
-                        f"achieve at a new gauge, and published Indian flood models can only be compared under the "
-                        f"same split."))
-    put("LeakConclude", f"A random row split would have reported a balanced accuracy {M['LeakGapBA']} points higher.")
+    put("LeakDiscuss", (f"a refit scored on a random row split reached a balanced accuracy {M['LeakGapBA']} points "
+                        f"higher than the held-out protocol (Table~\\ref{{tab:leak}}). The test sets and flood rates "
+                        f"differ, so not all of this gap is leakage, but scores from random row splits should not be "
+                        f"read as skill at a new gauge, and published Indian flood models can only be compared under "
+                        f"the same split."))
+    put("LeakConclude", f"A random row split scored {M['LeakGapBA']} points higher in balanced accuracy on its own test set.")
 elif gap_ba > 0:
     put("LeakDiscuss", (f"a random row split scored {M['LeakGapBA']} points higher in balanced accuracy "
                         f"(Table~\\ref{{tab:leak}}), a gap within the variation between gauges, so the protocol "
@@ -194,8 +195,8 @@ else:
     put("LeakConclude", "A random row split did not inflate the score once thresholds came from training years only.")
 assert m["lstm_sim"]["precision"] < 0.5, "text: even the LSTM with future rain has low precision"
 if L["random"]["ba_ci"][0] > L["space_time"]["ba_ci"][1]:
-    put("LeakAbstract", (f"Scoring the same model on random rows raised balanced accuracy to {M['LeakRandBA']}, an "
-                         f"inflation of {M['LeakGapBA']} points."))
+    put("LeakAbstract", (f"A refit scored on a random row split reached {M['LeakRandBA']}, {M['LeakGapBA']} points "
+                         f"higher on its own test set."))
 elif gap_ba > 0:
     put("LeakAbstract", f"A random row split scored {M['LeakGapBA']} points higher, within the gauge-to-gauge variation.")
 else:
