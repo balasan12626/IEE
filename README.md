@@ -45,7 +45,7 @@ Inside each `pdf_and_tex/`:
 | P2 | Second round done; PDFs are final for that round. The third round was stopped part way, so `P2_Agentic_AI/code/paper.tex` is half edited. `paper_before_r3.tex.bak` is the version that matches the PDFs. |
 | P3 | Round 5 done (14 Oct): raw-vector re-scoring, real MILP time limits, infeasibility re-check, reference and wording fixes; 6 pages, all checks pass. |
 | P4 | Second round done (14 Oct): built from stored results, 6 pages. |
-| P5 | Must be rebuilt after P3 and P4; the build currently fails on a missing P3 macro (`RaTimeoutFeasible`), and its P1 summary needs the new caveat on oracle angle selection. |
+| P5 | Rebuilt 14 Oct with the current P1 to P4 numbers (oracle caveat, fresh-city and solver-first results); 6 pages, all checks pass. Submit P5 or the separate papers, never both. |
 
 The reviewer comments and what was changed for each are in `latest_14_oct/IEEE_reviewer_response.md`.
 

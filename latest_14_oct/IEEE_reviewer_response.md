@@ -234,6 +234,17 @@ Build: 6 pages (blind and camera), 18 references, no overfull boxes. Old PDFs in
 
 ---
 
+## Paper 5: rebuilt (14 Oct 2026)
+
+| Item | Status | Change |
+|---|---|---|
+| P1 summary lacked the oracle caveat | Fixed | States that rule (8) uses development optima, that energy/CVaR sets fell below per-instance training in leave-one-out, adds the no-optima rule's fresh-city result and the three disruption losses. |
+| P3 summary used removed time-out macros | Fixed | Now reports the 1 s deadline (45 instances stopped, all solvable) and the solver-first result (82.5% vs 37.0% optimal). |
+| P2 wording "caught" for guards | Fixed | "flagged", with labelled errors where recall is meant. |
+| Reuse of companion papers not stated | Fixed | One sentence in the Introduction. Submit P5 or the separate papers, never both. |
+| Unclosed quote in Sec. VII, build path in this repo | Fixed | `post_p5.py` finds the companion folders here; P2 post uses stored labels when the backend is absent. |
+| Page limit | Done | Duplicate P1 figure dropped; abstract rewritten (under 250 words); 6 pages, all checks pass. |
+
 ## Our own score estimate (not a real review)
 
 | Criterion (out of 5) | P1 | P2 |
