@@ -155,8 +155,8 @@ if L["random"]["ba_ci"][0] > L["space_time"]["ba_ci"][1]:
     lt = (f"The random row split gave the highest balanced accuracy, {M['LeakRandBA']}, against {M['LeakSpTiBA']} on "
           f"unseen gauges in later years; the two bootstrap intervals ({L['random']['ba_ci'][0]:.4f}--{L['random']['ba_ci'][1]:.4f} "
           f"and {L['space_time']['ba_ci'][0]:.4f}--{L['space_time']['ba_ci'][1]:.4f}) only just separate, and they come "
-          f"from different test sets, so the gap is indicative rather than tested. Random splitting inflated "
-          f"balanced accuracy by {M['LeakGapBA']} points and PR-AUC by {M['LeakGapPR']} points.")
+          f"from different test sets, so the gap is indicative rather than tested. The random split scored "
+          f"{M['LeakGapBA']} points higher in balanced accuracy and {M['LeakGapPR']} points higher in PR-AUC.")
 elif gap_ba > 0:
     lt = (f"The random row split gave a balanced accuracy of {M['LeakRandBA']} against {M['LeakSpTiBA']} on unseen gauges "
           f"in later years, {M['LeakGapBA']} points higher, but the bootstrap intervals overlap, so on this task the "
@@ -361,6 +361,7 @@ put("OnsetNoFlow", f3(a["no_flow"]["onset"]["ba"]))
 put("OnsetFlowOnly", f3(a["flow_only"]["onset"]["ba"]))
 single = {k: a[k]["onset"]["ba"] - a["all"]["onset"]["ba"] for k in ("no_rain", "no_soil", "no_static")}
 put("AblOnMaxDelta", f"{max(abs(v) for v in single.values()):.4f}")
+assert all(v > 0 for v in single.values()), "text: each single-group removal raised onset BA slightly"
 assert single["no_rain"] > 0, "text: removing rainfall raised onset balanced accuracy"
 put("NoFlowPrec", f3(a["no_flow"]["precision"]))
 assert a["no_flow"]["precision"] < a["all"]["precision"], "text: no-flow variant is less precise"

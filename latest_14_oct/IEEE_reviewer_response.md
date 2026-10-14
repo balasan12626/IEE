@@ -268,6 +268,18 @@ Build: 6 pages (blind and camera), 18 references, no overfull boxes. Old PDFs in
 | Unclosed quote in Sec. VII, build path in this repo | Fixed | `post_p5.py` finds the companion folders here; P2 post uses stored labels when the backend is absent. |
 | Page limit | Done | Duplicate P1 figure dropped; abstract rewritten (under 250 words); 6 pages, all checks pass. |
 
+## Final independent internal reviews (14 Oct 2026, five fresh reviewers, after all fixes)
+
+| Paper | Out of 5 | Out of 10 | Prose | Main remaining weakness |
+|---|---|---|---|---|
+| P1 | 3.0 | 6 | plain human English, no em dashes or tell words | tiny instances; oracle selection; capacity unsolved |
+| P2 | 3.5 | 6 | same | single non-blind annotator; small held-out set |
+| P3 | 3.5 | 6.5 | same | architecture is standard; solver-first dominates |
+| P4 | 3.5 | 7 | same | protocol gap on different test sets; low precision |
+| P5 | 3.0 | 6 | same | reuses P1 to P4; layers not joined end to end |
+
+The small text mismatches these reviewers found were fixed in the last commit (P2 family count and over-claim wording, P3 failure-cause wording, P4 LSTM overlap, candidate count, release statement and ablation wording, P5 "certified" vs "settled", the oracle label in its transfer table, and certificate time). These are internal estimates, not real reviews. None of the reviewers thought 4.2 to 4.5 was reachable without new science: hardware runs or a capacity-preserving mixer (P1, P3), a second annotator (P2), and forecast-rain inputs (P4).
+
 ## Our own score estimate (not a real review)
 
 | Criterion (out of 5) | P1 | P2 |

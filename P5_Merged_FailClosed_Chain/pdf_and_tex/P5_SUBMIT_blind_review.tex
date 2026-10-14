@@ -97,7 +97,7 @@ The prototype runs one pipeline per tick, either on live weather and river data 
 Layer & Proposes & Check & Result\\
 \midrule
 Forecast (\S\ref{sec:fc}) & flood within 3 days & unseen gauges and years; review on alarm & BA \FcXgbBA, precision \FcXgbPrec\\
-Re-planner (\S\ref{sec:qa}, \S\ref{sec:ra}) & shelter plan (samples) & exact verifier, greedy rule, MILP & 0 invalid plans dispatched; \RaCitySettled/\RaCityN{} cases certified\\
+Re-planner (\S\ref{sec:qa}, \S\ref{sec:ra}) & shelter plan (samples) & exact verifier, greedy rule, MILP & 0 invalid plans dispatched; \RaCitySettled/\RaCityN{} cases settled by the MILP\\
 Policy (\S\ref{sec:ag}) & dispatch & health flags, gate, composed check & bypasses \AgEtoEViolBefore{} $\rightarrow$ \AgEtoEViolAfter\\
 Narrator (\S\ref{sec:ag}) & radio text & typed numeric guard & recall \AgLiveTypRec\%, false rejection \AgLiveTypFpr\%\\
 \bottomrule
@@ -167,7 +167,7 @@ After scaling every instance to the energy range $[0,1]$, all instances share on
 
 \textit{Mixers and transfer.} We simulate QAOA \cite{Farhi2014} exactly on 12-qubit twin instances (four groups, three shelters) after a road closure and a shelter surge. The transverse-field (X) mixer explores all bitstrings; a ring-XY mixer \cite{Hadfield2019,WangZ2020} swaps amplitude inside each group, so every state stays a one-hot plan; a Grover mixer \cite{Bartschi2020} mixes all one-hot plans in one step but needs far deeper circuits. For transfer, we fix at each depth one trained angle set from \QaNPaired{} development instances, in the spirit of \cite{Shaydulin2023}, and apply it unchanged to new instances. Choosing the set with the highest mean optimal-plan probability uses the exact optima of the development set, so it is an oracle; we also test rules that need no optima.
 
-\textit{Results.} Over \QaNPaired{} instances and \QaNSeeds{} optimizer seeds, the XY mixer placed \QaSeedXYMean{}~$\pm$~\QaSeedXYSd{} of its probability on the optimal plan at depth 4, against at most \QaSeedXMax{} for the X mixer, and beat it on at least \QaStXYvXWinsMin{} of \QaNPaired{} instances at every depth (Holm-adjusted $p\le\QaStXYvXMaxP$). The Grover mixer was not significantly different from XY ($p\ge\QaStXYvGMMinP$). Table~\ref{tab:qa} gives the transfer results. On \QaHoN{} held-out twin instances the fixed angles beat per-instance training, at no per-instance cost. On \QaCityN{} instances built on the road graphs of \QaCityNCities{} cities they matched it ($p=\QaCityP$) and found the optimum within \QaShots{} shots far more often. Chosen on the twin by mean energy or CVaR, which need no optima, the set fell below per-instance training in leave-one-out (\QaSelEnLoo{} and \QaSelCvLoo{} against \QaSelDevTrained). A third rule needs no optima: it scores each set by the expected cost of the best verified plan among \QaShots{} shots. On \QaFrN{} fresh city instances under four disruption patterns, its set reached the optimum within \QaShots{} shots in \QaFrSetSucc\% of cases, against \QaFrTrainedSucc\% for per-instance training and \QaFrCvarSucc\% for CVaR training. Under three new disruptions no fixed set raised $P_{\mathrm{opt}}$ significantly, and \QaDsLosses{} of nine comparisons lowered it.
+\textit{Results.} Over \QaNPaired{} instances and \QaNSeeds{} optimizer seeds, the XY mixer placed \QaSeedXYMean{}~$\pm$~\QaSeedXYSd{} of its probability on the optimal plan at depth 4, against at most \QaSeedXMax{} for the X mixer, and beat it on at least \QaStXYvXWinsMin{} of \QaNPaired{} instances at every depth (Holm-adjusted $p\le\QaStXYvXMaxP$). The Grover mixer was not significantly different from XY ($p\ge\QaStXYvGMMinP$). Table~\ref{tab:qa} gives the transfer results. On \QaHoN{} held-out twin instances the fixed angles beat per-instance training, at no per-instance cost. On \QaCityN{} instances built on the road graphs of \QaCityNCities{} cities they matched it ($p=\QaCityP$) and found the optimum within \QaShots{} shots more often (\QaCitySuccFixed\% against \QaCitySuccTrained\%, Holm $p=\QaCitySuccPHolm$). Chosen on the twin by mean energy or CVaR, which need no optima, the set fell below per-instance training in leave-one-out (\QaSelEnLoo{} and \QaSelCvLoo{} against \QaSelDevTrained). A third rule needs no optima: it scores each set by the expected cost of the best verified plan among \QaShots{} shots. On \QaFrN{} fresh city instances under four disruption patterns, its set reached the optimum within \QaShots{} shots in \QaFrSetSucc\% of cases, against \QaFrTrainedSucc\% for per-instance training and \QaFrCvarSucc\% for CVaR training. Under three new disruptions no fixed set raised $P_{\mathrm{opt}}$ significantly, and \QaDsLosses{} of nine comparisons lowered it.
 
 \textit{Classical baselines.} Exhaustive search over the 81 one-hot plans took \QaExactMs~ms per instance. A greedy rule found a feasible plan in \QaGreedyFeas\% of instances and the optimum in \QaGreedyOpt\%, and simulated annealing with 20 restarts reached the optimum in \QaSATunedOpt\% in \QaSATunedMs~ms. QAOA is therefore neither the fastest nor the most reliable solver at this size.
 
@@ -180,7 +180,7 @@ After scaling every instance to the energy range $[0,1]$, all instances share on
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lcc}
 \toprule
-Measure & Trained per instance & Fixed angles\\
+Measure & Trained per instance & Fixed angles$^\ast$\\
 \midrule
 Held-out twin, $P_{\mathrm{opt}}$ & \QaHoTrainedFour & \QaHoFixedFour\\
 Held-out, optimum in \QaShots{} shots (\%) & \QaHoSuccTrained & \QaHoSuccFixed\\
@@ -189,11 +189,12 @@ Six cities, $P_{\mathrm{opt}}$ & \QaCityTrained & \QaCityFixed\\
 Cities, optimum in \QaShots{} shots (\%) & \QaCitySuccTrained & \QaCitySuccFixed\\
 Fresh cities, no-optima rule (\%) & \QaFrTrainedSucc & \QaFrSetSucc\\
 \bottomrule
+\multicolumn{3}{l}{\scriptsize $^\ast$Other rows: set chosen with development optima (oracle).}\\
 \end{tabular}
 \end{table}
 
 \section{Runtime Assurance for the Re-Planner}\label{sec:ra}
-A good sampler is still a sampler. Algorithm~\ref{alg:loop} puts it inside a runtime-assurance loop \cite{Sha2001,Desai2019}. Every sample is checked with (\ref{eq:valid}) against the state at dispatch time. If none passes, a greedy rule (largest group first to its cheapest shelter with seats left) is tried. Only then does the loop ask a mixed-integer program (MILP), solved with HiGHS \cite{Huangfu2018}, to minimise $\sum c_{gs}x_{gs}$ subject to (\ref{eq:valid}). An infeasible MILP certifies that no valid plan exists, so the escalation to a human is justified; a feasible one supplies the plan. A solver time-out proves nothing, so that case is escalated but marked uncertified. The natural baseline is the uncertified loop, which escalates whenever the sampler and the greedy rule fail.
+Algorithm~\ref{alg:loop} puts it inside a runtime-assurance loop \cite{Sha2001,Desai2019}. Every sample is checked with (\ref{eq:valid}) against the state at dispatch time. If none passes, a greedy rule (largest group first to its cheapest shelter with seats left) is tried. Only then does the loop ask a mixed-integer program (MILP), solved with HiGHS \cite{Huangfu2018}, to minimise $\sum c_{gs}x_{gs}$ subject to (\ref{eq:valid}). An infeasible MILP certifies that no valid plan exists, so the escalation to a human is justified; a feasible one supplies the plan. A solver time-out proves nothing, so that case is escalated but marked uncertified. The natural baseline is the uncertified loop, which escalates whenever the sampler and the greedy rule fail.
 
 \begin{algorithm}[t]
 \caption{Runtime-assurance re-planning at one event}
@@ -241,7 +242,7 @@ Optimal plan, solver first, 1~s deadline (\%) & \RaDfOptOne\\
 
 \textit{Results.} Table~\ref{tab:ra} gives the outcome. On the twin, dispatching the most frequent sample unchecked would have sent an invalid plan in \RaTwinRawQ\% of event draws for QAOA and \RaTwinRawSA\% for annealing (\RaTwinRawFeasQ\% and \RaTwinRawFeasSA\% on solvable events only). Almost all of these samples overfilled a shelter in exactly the way the pairwise penalty cannot see, so the error lies in the encoding, not in the search. At city scale the search failed instead: the annealer's rate of valid plans on solvable instances fell from \RaCitySAFoundEight\% at 8 groups to \RaCitySAFoundThirtyTwo\% at 32 (Fig.~\ref{fig:city}), and the uncertified loop would have called a human for \RaCityFalseEsc\% of cases that had a plan. The MILP settled all \RaCityN{} instances, the slowest in \RaMilpMaxS~s, but a 1~s deadline would have stopped \RaDlOne{} of them, all with valid plans. Calling the MILP first with that deadline, and keeping the sampler and greedy rule as fallback, dispatched an optimal plan in \RaDfOptOne\% of solvable calls, against \RaLoopOpt\% when the sampler went first. An adaptive shot budget cut the twin's shots per event from 64 to \RaAdaptShots{} with identical escalation decisions, but optimal QAOA plans fell from \RaFixedOptQ\% to \RaAdaptOptQ\% of events.
 
-\textit{Differences between cities.} \RaByCityText{} The MILP's median solve time grew from \RaMilpMedEight~s at 8 groups to \RaMilpMedThirtyTwo~s at 32, so at the sizes tested the certificate costs seconds at most.
+\textit{Differences between cities.} \RaByCityText{} The MILP's median solve time grew from \RaMilpMedEight~s at 8 groups to \RaMilpMedThirtyTwo~s at 32, so a typical certificate takes under a second, though the slowest took \RaMilpMaxS~s.
 
 \begin{figure}[t]
 \centering
@@ -289,8 +290,6 @@ LLM judge & \AgLiveJJudRec & \AgLiveJJudFpr & -- & --\\
 \end{table}
 
 \section{Discussion}
-Four lessons recur across the layers.
-
 \textit{Check the composed path, not only the component.} The verified policy had no violations, yet the dispatch code bypassed it in \AgEtoEViolBefore{} cases. The forecaster's score depended on the split in the same way: random rows added \FcLeakGapPR{} points of PR-AUC that a new river would never deliver. In both cases the component was correct and the path around it was not.
 
 \textit{Check proposals against typed state.} The two generative components failed for parallel reasons. The pairwise penalty could not see a three-group overload, and the untyped guard could not see a correct number placed in the wrong slot. Both checks compared the output with the right data at the wrong granularity. An exact verifier of (\ref{eq:valid}) and a typed guard close these gaps, because each checks every constraint or quantity by name.
@@ -301,7 +300,7 @@ Four lessons recur across the layers.
 
 \textit{Reproducibility.} All experiments use fixed seeds, and the live LLM replies are stored. A script writes every number into the source and asserts each comparison the text makes, so a changed result fails the build.
 
-\textit{Threats to validity.} The forecast benchmark uses peninsular gauges of CAMELS-IND, while the agents and the twin model the Delhi Yamuna corridor, and the policy's classifiers were trained on separate data; joining the forecaster to the policy is future work. Twin and city instances use synthetic group sizes and estimated shelter capacities. All QAOA runs are classical simulations of at most \QaScQubitsMax{} qubits, and exact methods solve such instances faster. The LLM results cover three model families and one prompt. No field trial with officers has been made.
+\textit{Threats to validity.} The forecast benchmark uses peninsular gauges of CAMELS-IND, while the agents and the twin model the Delhi Yamuna corridor, and the policy's classifiers were trained on separate data; joining the forecaster to the policy is future work. Twin and city instances use synthetic group sizes and estimated shelter capacities. All QAOA runs are classical simulations (12 qubits here, at most \QaScQubitsMax{} in the companion study), and exact methods solve such instances faster. The LLM results cover three model families and one prompt. No field trial with officers has been made.
 
 \section{Conclusion}
 A flood decision-support chain can use a learned forecaster, a sampling optimizer and an LLM narrator safely only if none of them acts on its own output. In our prototype each one proposes and a deterministic check decides. Measured on held-out data and on the deployed code, the checks found a policy bypass in \AgEtoEViolBefore{} cases, blocked every invalid shelter plan, separated certified from uncertified escalations, and flagged \AgLiveTypRec\% of the replies with unsupported numbers in live LLM output, each at a cost that we report. A better component, such as a constraint-preserving QAOA mixer with fixed angles or a stronger forecaster, raises the quality of the proposals but does not remove the need to check them. We make no claim of quantum advantage.

@@ -81,6 +81,8 @@ assert v("RaCitySettled") == v("RaCityN") and v("RaCityTimeout") == 0, "MILP set
 assert v("RaDlOne") > 0 and v("RaDfOptOne") > 2 * v("RaLoopOpt") - 1, "solver first with a 1 s deadline"
 assert v("QaFrSetSucc") > v("QaFrCvarSucc") > v("QaFrTrainedSucc"), "fresh cities: no-optima set ahead"
 assert v("QaSelEnLoo") < v("QaSelDevTrained") and v("QaSelCvLoo") < v("QaSelDevTrained"), "oracle-free twin rules below training"
+assert v("RaMilpMedThirtyTwo") < 1 < v("RaMilpMaxS"), "typical certificate under a second, slowest longer"
+assert v("QaCitySuccFixed") > v("QaCitySuccTrained") and v("QaCitySuccPHolm") < 0.05, "cities: optimum within 32 shots more often"
 assert v("QaDsLosses") == 3, "three of nine disruption comparisons lost P_opt"
 assert v("RaAdaptOptQ") < v("RaFixedOptQ") and v("RaAdaptSame") == 100, "adaptive budget cost"
 assert v("RaMilpMedThirtyTwo") > v("RaMilpMedEight") and v("RaMilpMaxS") < 60, "MILP cost"
