@@ -152,6 +152,19 @@ New experiments that run without the twin backend, on the city road networks (re
 
 Both reviewers judged 4.5 not reachable for this work without new science (a capacity-preserving mixer that helps at 21-27 qubits, or a hardware run); their realistic target is about 4.0 as an honest benchmark paper.
 
+### P1 round 8 (14 Oct 2026, after a strict internal review scored 3.0 to 3.3)
+
+| Comment | Status | Change |
+|---|---|---|
+| The no-optima rule was chosen and tested on the same 197 city instances | Done | `exp_p1_r8.py`: 195 fresh feasible city instances (240 built, seeds never used in any selection, all four patterns). The chosen set kept P_opt about equal to per-instance training (0.246 vs 0.237, Holm p = 0.049) and raised success@32 from 80.1% to 96.8%, in all 6 cities. |
+| No CVaR baseline for success@32 | Done | Per-instance CVaR training on the same fresh instances: 90.6% success@32 at P_opt 0.122; the fixed set stays ahead (Holm p = 8.0e-14). |
+| No training-free schedule baseline | Done | Linear ramp with its scale chosen by the same rule: P_opt 0.006, below uniform one-hot sampling (0.012); the best scale lay at the edge of the grid. Reported as is. |
+| Discussion said the no-optima rule "made the same choice" as rule (8) | Fixed | It picked the twin energy-rule set; text corrected and asserted in `post_p1_r7.py`. |
+| Conclusion lacked the oracle caveat and the p = 4 limit | Fixed | Both added. |
+| Missing related work on inequality penalties and weighted parameter setting | Fixed | Montanez-Barrera et al. (QST 2024) and Sureshbabu et al. (Quantum 2024), checked by web search. |
+| Wording: "bounds", "at most", Sycamore error, "a device can apply", "ours is not special" | Fixed | Reference point, mean probability, two-qubit Pauli error, "needs no optima", reworded. |
+| Page limit | Done | Exact-penalty table folded into text (all its numbers stay in the text); both copies 6 pages, all build checks pass. |
+
 ## Paper 3: round 3 (14 Oct 2026, internal review, no new experiments)
 
 An internal reviewer (scored 2.9 / 5) found the problems below. All numbers come from stored results (`p3_city2.json`, `p3_v2.json`, `p3_r2.json`) through `post_p3.py` / `post_p3_r2.py`, which assert each new claim.

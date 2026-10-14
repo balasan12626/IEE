@@ -53,6 +53,14 @@ def extend(put, work):
     pv = wilcoxon(1 - (1 - v["F"]) ** 32, 1 - (1 - e["F"]) ** 32).pvalue
     put("LcVvsEP", sci(pv))
     assert pv < 0.01, "text: verified-cost choice above the energy rule re-applied on cities"
+    assert all(a != b for a, b in zip(e["picks"], v["picks"])), "text: the energy rule re-applied picked other sets"
+    assert int(v["pos_s"]) == len(cities), "text: success@32 higher in all cities"
+    cj = [r for r in json.loads((work / "p1_cities.json").read_text(encoding="utf-8"))["rows"] if r["feasible_instance"]]
+    cv = np.array([r["xy:0.1:4"]["trained"] for r in cj])
+    put("CityCvarTrainedSucc", f"{s32(cv):.1f}")
+    base_v = [r["popt"][v["picks"][0]] for r in R if r["pattern"] == "base"]
+    put("LcVBaseSucc", f"{s32(base_v):.1f}")
+    assert s32(base_v) > s32(cv), "text: the chosen set beats per-instance CVaR training in success@32 on the base cities"
     k = v["picks"][0]
     for pat, tg in (("base", "Base"), ("roads", "Roads"), ("shelter", "Shelter"), ("cut", "Cut")):
         rr = [r for r in R if r["pattern"] == pat]

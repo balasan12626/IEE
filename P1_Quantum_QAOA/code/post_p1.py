@@ -316,6 +316,8 @@ import post_p1_r7  # noqa: E402  seventh revision: angle selection without optim
 
 R6 = post_p1_r6.extend(put, WORK, OUT)
 R7 = post_p1_r7.extend(put, WORK)
+import post_p1_r8  # noqa: E402  eighth revision: fresh city instances, CVaR and ramp baselines
+R8 = post_p1_r8.extend(put, WORK)
 
 with open(OUT / "nums.tex", "w", encoding="utf-8") as f:
     for k, v in M.items():

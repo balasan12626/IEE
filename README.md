@@ -41,7 +41,7 @@ Inside each `pdf_and_tex/`:
 
 | Paper | Status |
 |---|---|
-| P1 | Fourth round done (`latest_14_oct/`): size test with 150 instances at 15 to 27 qubits added from stored results. The varied-disruption run (`exp_p1_r4.py dis`) still needs the main repository. |
+| P1 | Round 8 done (14 Oct): confirmatory test on 195 fresh city instances, CVaR and linear-ramp baselines, review fixes; 6 pages, all checks pass. Capacity remains the main open limit. |
 | P2 | Second round done; PDFs are final for that round. The third round was stopped part way, so `P2_Agentic_AI/code/paper.tex` is half edited. `paper_before_r3.tex.bak` is the version that matches the PDFs. |
 | P3 | Third round done (14 Oct), 6 pages. |
 | P4 | Second round done (14 Oct): built from stored results, 6 pages. |

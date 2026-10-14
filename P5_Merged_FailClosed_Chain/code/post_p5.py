@@ -23,10 +23,20 @@ SRC = {"p1": ("p1_quantum", "Qa"), "p2": ("p2_agentic", "Ag"),
 FIGS = {"p4": ["fig_pr.pdf", "fig_rel.pdf"], "p1": ["fig_popt.pdf"], "p3": ["fig_city.pdf"],
         "p2": ["fig_errtypes.pdf"]}
 
+# the shareable copy names the folders differently from the main repository
+COPY = {"p1_quantum": "P1_Quantum_QAOA", "p2_agentic": "P2_Agentic_AI", "p3_qagentic": "P3_Runtime_Assurance",
+        "p4_forecast": "P4_Forecasting_CAMELS_IND"}
+
+
+def src(folder):
+    p = SERIES / folder
+    return p if p.exists() else HERE.parents[1] / COPY[folder] / "code"
+
+
 lines, raw = [], {}
 for key, (folder, pre) in SRC.items():
     pdir = WORK / key
-    r = subprocess.run([sys.executable, str(SERIES / folder / f"post_{key}.py"), str(WORK), str(pdir)],
+    r = subprocess.run([sys.executable, str(src(folder) / f"post_{key}.py"), str(WORK), str(pdir)],
                        capture_output=True, text=True)
     if r.returncode:
         raise SystemExit(f"post_{key}.py failed:\n{r.stdout[-1500:]}\n{r.stderr[-1500:]}")
