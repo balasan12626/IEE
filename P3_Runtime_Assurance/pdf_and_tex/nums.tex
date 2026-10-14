@@ -30,6 +30,8 @@
 \newcommand{\MilpSlowS}{40.8}
 \newcommand{\CityText}{As the problem grew from 8 to 32 groups, simulated annealing produced a valid plan in 71.3\% and then 17.0\% of calls on solvable instances; Section~\ref{sec:viol} shows that at this scale most samples were not even complete assignments. Dispatching the top sample unchecked would have been unsafe in most calls at every size. With 8 groups at 90\% demand each group is about as large as the free seats of an average shelter, and only 9 of 60 instances had a valid plan. The uncertified loop escalated 4.4\% of solvable cases overall (11.1\% at 90\% demand, 0.0\% at 60\%), because the greedy rule also fails when capacity is tight. Where the greedy rule did find a plan, its median cost was 7.6\% above the optimum. The MILP settled 360 of the 360 instances, finding the optimal plan or proving that none exists; the slowest took 40.8~s, well inside the 60~s limit. }
 \newcommand{\AdaptShots}{18.4}
+\newcommand{\AdaptShotsQ}{18.0}
+\newcommand{\AdaptShotsSA}{18.7}
 \newcommand{\AdaptSame}{100.0}
 \newcommand{\AdaptOptQ}{68.8}
 \newcommand{\FixedOptQ}{93.1}
@@ -39,7 +41,7 @@
 \newcommand{\ShotQ}{0.05}
 \newcommand{\ShotEps}{0.01}
 \newcommand{\ShotNeed}{90}
-\newcommand{\ShotText}{With the adaptive budget the twin loop used 18.4 shots per event on average instead of 64 and took the same escalation decision in every draw. Plan quality did change for QAOA: it dispatched an optimal plan in 68.8\% of feasible draws against 93.1\% with the full budget, because the loop keeps the cheapest valid sample of the first successful batch rather than of all 64 shots. Annealing dispatched an optimal plan whenever it found a valid one, with either budget, so its rate stayed at 95.4\%. At city scale the adaptive rule used 50.0 shots per call, more than on the twin, because valid samples are rarer there.}
+\newcommand{\ShotText}{With the adaptive budget the twin loop used on average 18.0 (QAOA) and 18.7 (annealing) shots per event instead of 64 and took the same escalation decision in every draw. Plan quality did change for QAOA: it dispatched an optimal plan in 68.8\% of feasible draws against 93.1\% with the full budget, because the loop keeps the cheapest valid sample of the first successful batch rather than of all 64 shots. Annealing dispatched an optimal plan whenever it found a valid one, with either budget, so its rate stayed at 95.4\%. At city scale the adaptive rule used 50.0 shots per call, more than on the twin, because valid samples are rarer there.}
 \newcommand{\TwinRawFeasQ}{16.6}
 \newcommand{\TwinRawFeasSA}{6.5}
 \newcommand{\EvFiveInf}{27}
@@ -53,7 +55,7 @@
 \newcommand{\ViolBlindEight}{62.4}
 \newcommand{\ViolOnehotEight}{34.5}
 \newcommand{\ViolOnehotSixteen}{86.6}
-\newcommand{\ViolText}{On the twin, 97.7\% of the unsafe QAOA samples and 94.6\% of the annealing samples overfilled a shelter although every pair of groups in it fitted, so the QUBO assigned them no penalty at all. Overloads with a penalized pair almost never reached the top, and the XY mixer never broke the one-hot rule. At city scale the annealer, run for a fixed 40 sweeps, left groups with no shelter or with several in 34.5\% of unsafe samples at 8 groups, 86.6\% at 16 and all of them at 32, while penalty-free overloads fell from 62.4\% to none. On the twin the failures are encoding misses; at city scale they are mostly broken one-hot rows, which longer annealing did not repair (Section~\ref{sec:base}). The verifier catches both. The twin re-run that produced these classes reproduced the original flags in every draw; the city classes come from the same run as the city tables.}
+\newcommand{\ViolText}{On the twin, 97.7\% of the unsafe QAOA samples and 94.6\% of the annealing samples overfilled a shelter although every pair of groups in it fitted, so the QUBO assigned them no penalty at all. Overloads with a penalized pair almost never reached the top, and the XY mixer never broke the one-hot rule. At city scale the bit-flip annealer's most frequent outcome, with every vector that is not one-hot counted as one outcome, was such a broken vector in 34.5\% of unsafe draws at 8 groups, 86.6\% at 16 and all of them at 32, while penalty-free overloads fell from 62.4\% to none. On the twin the failures are encoding misses; at city scale they are mostly broken one-hot rows, which longer annealing did not turn into valid plans (Section~\ref{sec:base}). The verifier catches both. The twin re-run that produced these classes reproduced the original flags in every draw; the city classes come from the same run as the city tables.}
 \newcommand{\TraceSeedNo}{178}
 \newcommand{\TracePfTwo}{0.02}
 \newcommand{\TracePfThree}{0.00}
@@ -91,8 +93,6 @@
 \newcommand{\BasePfCitySol}{57.2}
 \newcommand{\BasePfNoneCity}{14.0}
 \newcommand{\BaseText}{Taking the lowest-energy sample instead of the most frequent one lowered QAOA's unsafe rate on solvable twin events from 16.6\% to 5.9\%, and keeping only samples with zero penalty gave 5.9\%; for annealing the three rates were 6.5, 5.9 and 5.9\%. The remaining failures are the penalty-free overloads of Section~\ref{sec:viol}: they carry no penalty and can cost less than any valid plan, so no choice by energy can exclude them. At city scale the lowest-energy sample was unsafe in 71.2\% of calls on solvable instances, and in 14.0\% of calls no sample was penalty-free at all.}
-\newcommand{\ExMilpMs}{5.1}
-\newcommand{\ExQaoaS}{9.3}
 \newcommand{\ExSaTwinMs}{32}
 \newcommand{\ExSaCityEight}{0.32}
 \newcommand{\ExMilpCityEight}{0.01}
@@ -173,5 +173,36 @@
 \newcommand{\SwMinThirtyTwo}{13.3}
 \newcommand{\SwMaxThirtyTwo}{13.3}
 \newcommand{\SwN}{108}
+\newcommand{\SwBigInst}{4}
+\newcommand{\RwNone}{61.2}
+\newcommand{\RwOneHot}{60.7}
+\newcommand{\RwRepeat}{58.6}
+\newcommand{\RwTopUnsafe}{79.6}
+\newcommand{\RwTopUnsafeSol}{71.4}
+\newcommand{\RwLowUnsafeSol}{71.3}
+\newcommand{\RwTopUnsafeSolEight}{42.9}
+\newcommand{\RwTopUnsafeSolSixteen}{77.9}
+\newcommand{\RwTopUnsafeSolThirtyTwo}{83.0}
+\newcommand{\RwTopUnsafeEight}{70.5}
+\newcommand{\RwN}{360}
+\newcommand{\RwInf}{103}
+\newcommand{\RwRecheckSame}{103}
+\newcommand{\RdOptHalf}{96.1}
+\newcommand{\RdValHalf}{100.0}
+\newcommand{\RdNoneHalf}{0.0}
+\newcommand{\RdInfHalf}{103}
+\newcommand{\RdOptOne}{98.4}
+\newcommand{\RdValOne}{100.0}
+\newcommand{\RdNoneOne}{0.0}
+\newcommand{\RdInfOne}{103}
+\newcommand{\RdOptTwo}{99.2}
+\newcommand{\RdValTwo}{100.0}
+\newcommand{\RdNoneTwo}{0.0}
+\newcommand{\RdInfTwo}{103}
+\newcommand{\RdOptFive}{99.6}
+\newcommand{\RdValFive}{100.0}
+\newcommand{\RdNoneFive}{0.0}
+\newcommand{\RdInfFive}{103}
+\newcommand{\RdSolvable}{257}
 \newcommand{\MilpMedEight}{0.01}
 \newcommand{\MilpMedThirtyTwo}{0.32}

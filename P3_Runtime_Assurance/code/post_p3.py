@@ -186,6 +186,8 @@ put("CityText", (
 ad = [x for r in T for k in ("qaoa_adaptive", "sa_adaptive") for x in r["draws"][k]]
 fx = [x for r in T for k in ("qaoa_fixed", "sa_fixed") for x in r["draws"][k]]
 put("AdaptShots", f"{np.mean([x['shots_used'] for x in ad]):.1f}")
+for smp, tg in (("qaoa", "Q"), ("sa", "SA")):
+    put(f"AdaptShots{tg}", f"{np.mean([x['shots_used'] for r in T for x in r['draws'][smp + '_adaptive']]):.1f}")
 same = 0
 tot = 0
 for r in T:
@@ -210,7 +212,7 @@ put("ShotQ", "0.05")
 put("ShotEps", "0.01")
 put("ShotNeed", f"{np.ceil(np.log(0.01) / np.log(1 - 0.05)):.0f}")
 put("ShotText", (
-    f"With the adaptive budget the twin loop used {M['AdaptShots']} shots per event on average instead of {cfg['shots']} "
+    f"With the adaptive budget the twin loop used on average {M['AdaptShotsQ']} (QAOA) and {M['AdaptShotsSA']} (annealing) shots per event instead of {cfg['shots']} "
     f"and took the same escalation decision in every draw. Plan quality did change for QAOA: it dispatched an optimal plan in "
     f"{M['AdaptOptQ']}\\% of feasible draws against {M['FixedOptQ']}\\% with the full budget, because the loop keeps the "
     f"cheapest valid sample of the first successful batch rather than of all {cfg['shots']} shots. Annealing dispatched an "
@@ -304,11 +306,11 @@ put("ViolText", (
     f"On the twin, {M['ViolBlindQ']}\\% of the unsafe QAOA samples and {M['ViolBlindSA']}\\% of the annealing samples "
     f"overfilled a shelter although every pair of groups in it fitted, so the QUBO assigned them no penalty at all. "
     f"Overloads with a penalized pair almost never reached the top, and the XY mixer never broke the one-hot rule. At "
-    f"city scale the annealer, run for a fixed 40 sweeps, left groups with no shelter or with several "
-    f"in {M['ViolOnehotEight']}\\% of unsafe samples at {Gs[0]} groups, {M['ViolOnehotSixteen']}\\% at {Gs[1]} and all of "
+    f"city scale the bit-flip annealer's most frequent outcome, with every vector that is not one-hot counted as one "
+    f"outcome, was such a broken vector in {M['ViolOnehotEight']}\\% of unsafe draws at {Gs[0]} groups, {M['ViolOnehotSixteen']}\\% at {Gs[1]} and all of "
     f"them at {Gs[-1]}, while penalty-free overloads fell from {M['ViolBlindEight']}\\% to none. On the twin the "
     f"failures are encoding misses; at city scale they are mostly broken one-hot rows, which longer annealing did not "
-    f"repair (Section~\\ref{{sec:base}}). The verifier catches both. " +
+    f"turn into valid plans (Section~\\ref{{sec:base}}). The verifier catches both. " +
     ("The twin re-run that produced these classes reproduced the original flags in every draw; the city classes come "
      "from the same run as the city tables."
      if CITY2 else
@@ -435,6 +437,15 @@ if (WORK / "p3_r4.json").exists():
     import post_p3_r4  # noqa: E402  fourth revision: infeasibility classes, one-hot failure classes, penalty sweep
 
     post_p3_r4.extend(put, WORK)
+if (WORK / "p3_r5.json").exists():
+    import post_p3_r5  # noqa: E402  fifth revision: raw-vector scoring, real MILP time limits, infeasibility re-check
+
+    post_p3_r5.extend(put, WORK)
+    assert abs(float(M["RwTopUnsafeEight"]) - float(M["OhUnsafeOldEight"])) < 2, "text: pooling did not change the picture"
+    assert all(float(M[f"RwTopUnsafeSol{t}"]) > 70 for t in ("Sixteen", "ThirtyTwo")), "text: still most calls at 16, 32"
+    assert float(M["SwMaxThirtyTwo"]) <= float(M["OhValidThirtyTwo"]) and float(M["CitySAFoundThirtyTwo"]) <= float(M["OhValidThirtyTwo"]), \
+        "abstract: neither retuning nor the one-hot annealer above the one-hot rate at 32 groups"
+    assert float(M["RdValHalf"]) == 100 and int(M["RdInfHalf"]) == int(M["InfN"]), "text: valid plan and proofs in 0.5 s"
 
 # ---------------- figure
 plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman"], "font.size": 8,

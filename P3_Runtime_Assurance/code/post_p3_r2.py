@@ -80,8 +80,6 @@ def extend(put, work, out, T, C, city2=None):
     milp_tw = float(np.median([v["milp_ms"] for v in r2["twin"]]))
     qtrain = float(np.median([v["qaoa_train_ms"] for v in r2["twin"]])) / 1000
     sa_tw = float(np.median([x for x in r2["twin_sa_ms"] if x is not None]))
-    put("ExMilpMs", f"{milp_tw:.1f}")
-    put("ExQaoaS", f"{qtrain:.1f}")
     put("ExSaTwinMs", f"{sa_tw:.0f}")
     city_sa = {G: float(np.median([v["sa_ms"] for v in r2["city"] if v["G"] == G])) for G in (8, 16, 32)}
     city_milp = {G: float(np.median([v["milp_ms"] for v in r2["city"] if v["G"] == G and v["milp_status"] in (0, 2)]))

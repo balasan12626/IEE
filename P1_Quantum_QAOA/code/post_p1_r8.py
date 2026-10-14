@@ -57,7 +57,8 @@ def extend(put, work):
     assert s32(A["set"]) > s32(A["trained_cvar"]) > s32(A["trained"]), "text: success@32 order set > CVaR > mean"
     assert adj[("set", "trained", "s")] < 0.01 and adj[("set", "trained_cvar", "s")] < 0.01, "text: both significant"
     assert pos["trained"] == pos["trained_cvar"] == len(cities), "text: higher success@32 in every city"
-    assert abs(A["set"].mean() - A["trained"].mean()) < 0.02, "text: P_opt about equal to per-instance training"
+    assert 0 < A["set"].mean() - A["trained"].mean() < 0.02 and adj[("set", "trained", "opt")] < 0.05, \
+        "text: slightly higher P_opt than per-instance training"
     assert A["trained_cvar"].mean() < A["trained"].mean(), "text: CVaR training lowered mean P_opt"
     assert A["ramp"].mean() < A["uniform"].mean() and s32(A["ramp"]) < s32(A["uniform"]), \
         "text: the linear ramp stayed below uniform one-hot sampling"

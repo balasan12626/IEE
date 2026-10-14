@@ -175,7 +175,10 @@ def extend(put, work, out):
     put("SweepAboveP", f"{100 * G2['sweep']['share_rain_above_train_p99']:.0f}")
 
     # ------------------------------------------------ prompt designs (live variant run)
-    S = states(150)
+    try:
+        S = states(150)
+    except ImportError:  # twin backend absent (shareable copy): use the per-variant labels stored by the main-repo run
+        S = None
     V = []
     for m, _ in MODELS:
         tag = m.split("/")[-1]
@@ -183,7 +186,11 @@ def extend(put, work, out):
     labels = json.loads((work / "p2_labels.json").read_text(encoding="utf-8"))["rows"]
     base_old = [x for x in labels if "gpt-oss" in x["model"]]
     stats = {}
+    stored = None if S is not None else json.loads((work / "p2_r2_summary.json").read_text(encoding="utf-8"))["variants"]
     for v in ("base", "noeta", "slots"):
+        if stored:
+            stats[v] = stored[v]
+            continue
         rr = [r for r in V if r["variant"] == v and not (r["error"] or "").startswith("HTTP 429")]  # rate limit: not a reply
         par = [r for r in rr if r["parsed"]]
         for r in par:

@@ -39,3 +39,9 @@ def extend(put, work):
     big = [r for r in F if r["G"] == 32 and "m1" in r]
     assert len({round(100 * np.mean([x["found"] for r in big for x in r[c]]), 6) for c in d["configs"]}) == 1, \
         "text: no setting changed the valid rate at 32 groups"
+    sets = {c: frozenset((r["city"], r["tight"], r["k"]) for r in big if any(x["found"] for x in r[c])) for c in d["configs"]}
+    assert len(set(sets.values())) == 1 and len(next(iter(sets.values()))) <= 5, \
+        "text: at 32 groups every setting succeeded on the same few instances"
+    put("SwBigInst", str(len(next(iter(sets.values())))))
+    g8 = {c: 100 * np.mean([x["found"] for r in F if r["G"] == 8 and c in r for x in r[c]]) for c in d["configs"]}
+    assert max(g8.values()) > g8["m1"] + 3, "text: retuning helped at 8 groups"

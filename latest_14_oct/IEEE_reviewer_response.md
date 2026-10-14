@@ -199,6 +199,19 @@ New city-only experiments (no twin backend needed; numbers asserted in `post_p3_
 
 Build: 6 pages, abstract 248 words, no overfull boxes.
 
+### P3 round 5 (14 Oct 2026, after a strict internal review scored 3.0)
+
+| Comment | Status | Change |
+|---|---|---|
+| City "most frequent sample" pools every non-one-hot vector into one outcome | Done | `exp_p3_r5.py` re-scores the bit-flip annealer on raw vectors (same seeds): top sample unsafe in 42.9 / 77.9 / 83.0% of solvable calls at 8 / 16 / 32 groups; over all 8-group calls 70.5% raw against 71.2% pooled, so the picture is unchanged. Stated in Sec. V. |
+| Deadline replay ignores the incumbent of a stopped solver | Done | Re-solved every instance with real limits of 0.5/1/2/5 s on a second computer: valid plan on every solvable instance within 0.5 s, optimum on 96.1% (98.4% within 1 s), all 103 infeasible proved. Replay now called "offline replay from measured solve times". |
+| "Certified" overstates a solver result | Fixed | Defined as a solver proof, not an independently checked one; a presolve-off re-solve agreed on all 103 infeasible instances. |
+| Retuning "did not help" was false at 8 groups (78.9 vs 72.1) | Fixed | "helped only at small sizes"; at 32 groups every setting succeeded on the same 4 instances (asserted). |
+| "Always optimal", "did not repair", "18.4 shots", "three groups" | Fixed | Reworded; adaptive shots now 18.0 (QAOA) and 18.7 (annealing). |
+| ReAct / Toolformer / AgentSpec references off topic | Fixed | Replaced by Montanez-Barrera et al. 2024 (inequality penalties) and Hobbs et al. 2023 (runtime-assurance tutorial), both checked by web search. |
+| Unused macros, Algorithm 1 fixed vs adaptive budget | Fixed | Macros deleted; Algorithm 1 line 1 states both budgets. |
+| Page limit | Done | Event table folded into its text; both copies 6 pages, all checks pass. |
+
 ## Paper 4: round 2 finished (14 Oct 2026, internal review, no new experiments)
 
 The round-2 source was never built into a PDF (the old PDF of 10 Oct had the round-1 text). It is now built from stored results; `models/flood_evaluation_v4.json` and `flood_model_metadata_v4.json` (from the main repository) are copied into the results snapshot. The basin folds are already in `p4_r2.json`. An internal reviewer scored the round-2 text 3.0 / 5; changes, each asserted in `post_p4.py` / `post_p4_r2.py`:
